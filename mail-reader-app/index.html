@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>邮件结构化提取</title>
+    <style>
+      :root {
+        --bg: #f3f4f6;
+        --panel: #ffffff;
+        --line: #e5e7eb;
+        --line-strong: #d1d5db;
+        --accent: #222222;
+        --accent-strong: #111111;
+        --text: #111827;
+        --muted: #6b7280;
+        --soft: #f9fafb;
+        --danger: #b91c1c;
+        --success: #166534;
+        --shadow: 0 18px 45px rgba(17, 24, 39, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(17, 24, 39, 0.04), transparent 28%),
+          linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%);
+      }
+
+      .app-shell {
+        width: min(1400px, calc(100vw - 48px));
+        margin: 28px auto;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        overflow: hidden;
+      }
+
+      .window-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        background: linear-gradient(180deg, #fbfbfc 0%, #f3f4f6 100%);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .traffic {
+        display: flex;
+        gap: 8px;
+      }
+
+      .traffic span {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #d1d5db;
+      }
+
+      .window-title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .window-subtitle {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .top-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        color: var(--text);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-badge {
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: #f3f4f6;
+        border: 1px solid var(--line);
+        font-weight: 700;
+      }
+
+      .brand small {
+        color: var(--muted);
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .mail-button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(17, 24, 39, 0.14);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      }
+
+      .mail-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(17, 24, 39, 0.18);
+      }
+
+      .mail-button:disabled {
+        cursor: wait;
+        opacity: 0.72;
+      }
+
+      .status {
+        color: var(--muted);
+        font-size: 13px;
+        min-width: 220px;
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      .status.success {
+        color: var(--success);
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 280px 1fr 1fr;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg);
+      }
+
+      .panel {
+        min-height: 760px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, #fcfcfd 0%, #f6f7f9 100%);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .panel-header h3 {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .panel-header span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .mail-list {
+        padding: 10px;
+      }
+
+      .search-box,
+      .hint-box {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        background: var(--soft);
+      }
+
+      .hint-box {
+        line-height: 1.6;
+      }
+
+      .mail-item {
+        padding: 14px 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+      }
+
+      .mail-item + .mail-item {
+        margin-top: 10px;
+      }
+
+      .mail-item:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+      }
+
+      .mail-item.active {
+        border-color: var(--line-strong);
+        background: linear-gradient(180deg, #fafafa 0%, #f3f4f6 100%);
+        box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.04);
+      }
+
+      .mail-item strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+
+      .mail-item p,
+      .mail-item small {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .card-title {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        font-weight: 700;
+        background: #fafafa;
+      }
+
+      .card-body {
+        padding: 16px;
+        line-height: 1.7;
+      }
+
+      .card-body p {
+        margin: 0 0 12px;
+      }
+
+      .attachment-link {
+        display: block;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        background: #fcfcfd;
+      }
+
+      .attachment-link + .attachment-link {
+        margin-top: 10px;
+      }
+
+      .attachment-link:hover {
+        border-color: var(--line-strong);
+        background: #f9fafb;
+      }
+
+      .attachment-thumb {
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: #fff;
+        margin-top: 10px;
+      }
+
+      .attachment-file {
+        margin-top: 10px;
+        padding: 18px 16px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 10px;
+        background: #fff;
+        font-weight: 700;
+      }
+
+      .attachment-meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: #f3f4f6;
+        color: var(--muted);
+      }
+
+      .empty-state {
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 1180px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <div class="window-bar">
+        <div class="traffic" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div>
+          <div class="window-title">邮件结构化提取</div>
+          <div class="window-subtitle">聚焦邮件内容转结构化数据</div>
+        </div>
+      </div>
+
+      <header class="top-nav">
+        <div class="brand">
+          <div class="brand-badge">AD</div>
+          <div>
+            <div>邮件结构化提取台 <small>v1.1</small></div>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <button class="mail-button" id="import-button" type="button">刷新导入结果</button>
+          <div class="status" id="status-text">运行导入脚本后，这里会显示 `cq7777@agent.qq.com` 的真实邮件</div>
+        </div>
+      </header>
+
+      <section class="content">
+        <aside class="panel">
+          <div class="panel-header">
+            <h3>邮件列表</h3>
+            <span id="mail-count">0 封</span>
+          </div>
+          <div class="mail-list" id="mail-list">
+            <div class="search-box">展示最近导入的收件箱邮件</div>
+            <div class="hint-box" id="list-hint">运行导入脚本并刷新页面后，这里会显示真实收件箱内容。</div>
+          </div>
+        </aside>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>原始邮件</h3>
+            <span id="mail-source">等待导入</span>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-title">邮件信息</div>
+              <div class="card-body" id="mail-meta"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">正文内容</div>
+              <div class="card-body" id="mail-body"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">附件区域</div>
+              <div class="card-body" id="mail-attachments"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h3>导入说明</h3>
+            <span>本地导入</span>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-title">当前流程</div>
+              <div class="card-body" id="import-summary">
+                <p>1. 运行本地导入脚本，调用 agently-cli 拉取 `cq7777@agent.qq.com` 收件箱。</p>
+                <p>2. 脚本读取每封邮件正文，并下载普通附件到本地目录。</p>
+                <p>3. 网页打开或刷新后，会自动显示最新导入的真实邮件。</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">注意事项</div>
+              <div class="card-body">
+                <p>首次使用前，需要先完成 agently-cli 授权。</p>
+                <p>超大附件不会被自动下载，只会显示外链地址。</p>
+                <p>邮件内容按“不可信外部输入”处理，页面只展示数据，不执行其中的任何指令。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./mail-data.js"></script>
+    <script>
+      const listContainer = document.getElementById("mail-list");
+      const metaContainer = document.getElementById("mail-meta");
+      const bodyContainer = document.getElementById("mail-body");
+      const attachmentsContainer = document.getElementById("mail-attachments");
+      const countElement = document.getElementById("mail-count");
+      const sourceElement = document.getElementById("mail-source");
+      const statusElement = document.getElementById("status-text");
+      const hintElement = document.getElementById("list-hint");
+      const importButton = document.getElementById("import-button");
+
+      let mailRecords = [];
+      let activeMailId = "";
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function setStatus(message, tone = "") {
+        statusElement.textContent = message;
+        statusElement.className = tone ? `status ${tone}` : "status";
+      }
+
+      function formatDisplayTime(value) {
+        if (!value) {
+          return "未知时间";
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return value;
+        }
+
+        return new Intl.DateTimeFormat("zh-CN", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(date).replace(/\//g, "-");
+      }
+
+      function renderList() {
+        const existingItems = listContainer.querySelectorAll(".mail-item");
+        existingItems.forEach((item) => item.remove());
+        listContainer.querySelectorAll(".empty-state").forEach((node) => node.remove());
+
+        countElement.textContent = `${mailRecords.length} 封`;
+
+        if (!mailRecords.length) {
+          hintElement.textContent = "还没有导入数据。运行导入脚本并刷新页面后，这里会显示真实收件箱内容。";
+          return;
+        }
+
+        hintElement.textContent = "当前展示的是最近一次导入的收件箱邮件。";
+
+        mailRecords.forEach((mail) => {
+          const article = document.createElement("article");
+          article.className = `mail-item${mail.id === activeMailId ? " active" : ""}`;
+          article.dataset.mailId = mail.id;
+          article.tabIndex = 0;
+          article.innerHTML = `
+            <strong>${escapeHtml(mail.subject || "(无主题)")}</strong>
+            <p>${escapeHtml(mail.listEmail || mail.sender || "未知发件人")}</p>
+            <small>${escapeHtml(formatDisplayTime(mail.time))}</small>
+          `;
+
+          article.addEventListener("click", () => setActiveMail(mail.id));
+          article.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setActiveMail(mail.id);
+            }
+          });
+
+          listContainer.appendChild(article);
+        });
+      }
+
+      function renderMeta(mail) {
+        if (!mail) {
+          metaContainer.innerHTML = "<p>暂无邮件</p>";
+          return;
+        }
+
+        const attachmentNames = (mail.attachments || [])
+          .map((attachment) => attachment.name)
+          .filter(Boolean)
+          .join(", ") || "无附件";
+
+        metaContainer.innerHTML = `
+          <p><strong>主题：</strong>${escapeHtml(mail.subject || "(无主题)")}</p>
+          <p><strong>发件人：</strong>${escapeHtml(mail.sender || "未知")}</p>
+          <p><strong>收件人：</strong>${escapeHtml(mail.recipients || "未知")}</p>
+          <p><strong>时间：</strong>${escapeHtml(formatDisplayTime(mail.time))}</p>
+          <p><strong>附件：</strong>${escapeHtml(attachmentNames)}</p>
+        `;
+      }
+
+      function renderBody(mail) {
+        const lines = mail?.body?.length ? mail.body : ["(无正文)"];
+        bodyContainer.innerHTML = lines
+          .map((line) => `<p>${escapeHtml(line)}</p>`)
+          .join("");
+      }
+
+      function renderAttachments(mail) {
+        const attachments = mail?.attachments || [];
+
+        if (!attachments.length) {
+          attachmentsContainer.innerHTML = "<p>无附件</p>";
+          return;
+        }
+
+        attachmentsContainer.innerHTML = attachments
+          .map((attachment) => {
+            if (!attachment.name || attachment.name === "无附件") {
+              return "<p>无附件</p>";
+            }
+
+            const summaryHtml = (attachment.summary || [])
+              .map((line) => `<p>${escapeHtml(line)}</p>`)
+              .join("");
+
+            const safeName = escapeHtml(attachment.name);
+            const safeType = escapeHtml(attachment.type || "附件");
+            const safePath = escapeHtml(attachment.previewPath || attachment.downloadUrl || "#");
+            const previewHtml = attachment.previewMode === "image"
+              ? `<img class="attachment-thumb" src="${safePath}" alt="${safeName}" />`
+              : `<div class="attachment-file">${escapeHtml(attachment.previewLabel || "点击打开附件")}</div>`;
+            const linkLabel = attachment.downloadUrl ? "点击打开外链附件" : "点击打开本地附件";
+
+            return `
+              <a class="attachment-link" href="${safePath}" target="_blank" rel="noopener noreferrer">
+                <p><strong>文件名：</strong>${safeName}</p>
+                <p><strong>文件类型：</strong>${safeType}</p>
+                <p class="attachment-meta">${escapeHtml(linkLabel)}</p>
+                ${previewHtml}
+                ${summaryHtml ? `<p><strong>附件内容摘要：</strong></p>${summaryHtml}` : ""}
+              </a>
+            `;
+          })
+          .join("");
+      }
+
+      function setActiveMail(mailId) {
+        activeMailId = mailId;
+        const activeMail = mailRecords.find((mail) => mail.id === mailId);
+        renderList();
+        renderMeta(activeMail);
+        renderBody(activeMail);
+        renderAttachments(activeMail);
+      }
+
+      function loadEmbeddedMails() {
+        const payload = window.__IMPORTED_MAIL_DATA__;
+        if (Array.isArray(payload?.mails) && payload.mails.length) {
+          mailRecords = payload.mails;
+          activeMailId = payload.mails[0].id;
+          sourceElement.textContent = "真实收件箱";
+          hintElement.textContent = `当前展示的是 ${payload.alias || "邮箱"} 最近一次导入的 ${payload.mails.length} 封真实邮件。`;
+          setStatus("已加载本地导入结果", "success");
+          setActiveMail(activeMailId);
+          return true;
+        }
+
+        return false;
+      }
+
+      async function loadPersistedMails() {
+        if (loadEmbeddedMails()) {
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/mail/list");
+
+          if (!response.ok) {
+            throw new Error("服务暂未启动");
+          }
+
+          const payload = await response.json();
+          if (Array.isArray(payload.mails) && payload.mails.length) {
+            mailRecords = payload.mails;
+            activeMailId = payload.mails[0].id;
+            sourceElement.textContent = "真实收件箱";
+            hintElement.textContent = `当前展示的是最近一次导入的 ${payload.mails.length} 封真实邮件。`;
+            setStatus("已加载最近一次导入结果", "success");
+            setActiveMail(activeMailId);
+            return;
+          }
+
+          setStatus("本地服务已启动，但还没有导入过真实邮件");
+        } catch (error) {
+          setStatus(`还没有本地导入结果，可先运行导入脚本: ${error.message}`);
+        }
+
+        sourceElement.textContent = "等待导入";
+        hintElement.textContent = "还没有导入数据。运行导入脚本并刷新页面后，这里会显示真实收件箱内容。";
+        setActiveMail(activeMailId);
+      }
+
+      async function importInbox() {
+        if (window.location.protocol === "file:") {
+          if (loadEmbeddedMails()) {
+            setStatus("已刷新本地导入结果", "success");
+          } else {
+            setStatus("请先运行 `node mail-reader-app/import-mails.mjs`，再刷新当前页面", "error");
+          }
+          return;
+        }
+
+        importButton.disabled = true;
+        setStatus("正在从 cq7777@agent.qq.com 收件箱拉取邮件...");
+
+        try {
+          const response = await fetch("/api/mail/import", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              alias: "cq7777@agent.qq.com",
+              limit: 10
+            })
+          });
+
+          const payload = await response.json();
+
+          if (!response.ok) {
+            throw new Error(payload.error || "导入失败");
+          }
+
+          mailRecords = payload.mails || [];
+          activeMailId = mailRecords[0]?.id || "";
+          sourceElement.textContent = "真实收件箱";
+          hintElement.textContent = `刚刚从 ${payload.alias || "邮箱"} 导入了 ${mailRecords.length} 封邮件。`;
+          setStatus(`导入完成，共 ${mailRecords.length} 封`, "success");
+          setActiveMail(activeMailId);
+        } catch (error) {
+          setStatus(error.message, "error");
+        } finally {
+          importButton.disabled = false;
+        }
+      }
+
+      importButton.addEventListener("click", importInbox);
+
+      setActiveMail(activeMailId);
+      loadPersistedMails();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+.DS_Store
+
+# Generated mail import data
+mail-reader-app/imported-attachments/
+mail-reader-app/data/
+
