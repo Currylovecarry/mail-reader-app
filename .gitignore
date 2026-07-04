@@ -1,7 +1,9 @@
 .DS_Store
 .env
 mail-reader-app/.env
+mail-reader-app/node_modules/
 
 # Generated mail import data
 mail-reader-app/imported-attachments/
 mail-reader-app/data/
+mail-reader-app/*.traineddata

@@ -400,6 +400,7 @@ async function normalizeAgentMessage(summaryItem) {
     normalizedAttachments.push({
       name: attachment.filename || attachment.name || downloaded?.fileName || "附件",
       type: attachment.content_type || attachment.mime_type || "附件",
+      size: Number(attachment.size) || 0,
       previewPath: downloaded?.webPath || "",
       previewMode: detectPreviewMode(
         attachment.filename || attachment.name || downloaded?.fileName || "",
@@ -946,6 +947,7 @@ async function normalizeImapMessage(item, accountEmail) {
     attachments.push({
       name: saved?.fileName || attachment.name || "附件",
       type: attachment.type || "附件",
+      size: Number(attachment.size) || 0,
       previewPath: saved?.webPath || "",
       previewMode: detectPreviewMode(saved?.fileName || attachment.name, attachment.type),
       previewLabel: saved ? "点击打开已下载附件" : "IMAP 已读取附件元数据，暂未下载附件内容",

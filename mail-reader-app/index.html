@@ -141,6 +141,58 @@
         opacity: 0.72;
       }
 
+      .secondary-button {
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        min-height: 36px;
+        padding: 7px 12px;
+        background: #ffffff;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .secondary-button:hover {
+        background: #f9fafb;
+        border-color: var(--accent);
+      }
+
+      .secondary-button:disabled {
+        cursor: wait;
+        opacity: 0.72;
+      }
+
+      .icon-button {
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--text);
+        cursor: pointer;
+        transition: background 0.18s ease, border-color 0.18s ease;
+      }
+
+      .icon-button:hover {
+        background: #f9fafb;
+        border-color: var(--accent);
+      }
+
+      .icon-button:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .icon-button svg {
+        width: 19px;
+        height: 19px;
+        stroke: currentColor;
+      }
+
       .status {
         color: var(--muted);
         font-size: 12px;
@@ -301,6 +353,88 @@
         margin: 0 0 12px;
       }
 
+      .field-list,
+      .parse-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .field-row {
+        display: grid;
+        grid-template-columns: 82px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .field-label {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .parse-item {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .parse-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .parse-empty {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .debug-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .extract-json {
+        max-height: 280px;
+        overflow: auto;
+        margin: 12px 0 0;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f9fafb;
+        font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+      }
+
+      .guide-dialog {
+        width: min(560px, calc(100vw - 32px));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0;
+        color: var(--text);
+        background: #fff;
+        box-shadow: 0 18px 45px rgba(17, 24, 39, 0.16);
+      }
+
+      .guide-dialog::backdrop {
+        background: rgba(17, 24, 39, 0.28);
+      }
+
+      .guide-dialog .panel-header {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .guide-dialog .stack {
+        max-height: min(640px, calc(100vh - 160px));
+        display: grid;
+        overflow: auto;
+      }
+
       .attachment-link {
         display: block;
         padding: 14px;
@@ -431,6 +565,10 @@
           width: 100%;
         }
 
+        .icon-button {
+          flex: 0 0 40px;
+        }
+
         .status {
           min-width: 0;
           margin-left: 0;
@@ -451,6 +589,13 @@
         </div>
         <div class="nav-actions">
           <button class="mail-button" id="import-button" type="button">刷新导入结果</button>
+          <button class="icon-button" id="guide-button" type="button" aria-label="查看导入说明" title="查看导入说明">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke-width="2"></circle>
+              <path d="M12 11.5v5" stroke-width="2" stroke-linecap="round"></path>
+              <path d="M12 7.5h.01" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+          </button>
           <div class="status" id="status-text">启动本地服务后，可按配置同步 agent 邮箱或普通 IMAP 邮箱</div>
         </div>
       </header>
@@ -492,38 +637,74 @@
 
         <section class="panel">
           <div class="panel-header">
-            <h3>导入说明</h3>
-            <span id="mail-mode-label">本地导入</span>
+            <h3>邮件解析</h3>
+            <span id="parse-status">等待邮件</span>
           </div>
           <div class="stack">
             <div class="card">
-              <div class="card-title">当前流程</div>
-              <div class="card-body" id="import-summary">
-                <p>1. 根据 MAIL_MODE 选择 agent 邮箱或普通 IMAP/SMTP 邮箱。</p>
-                <p>2. IMAP 模式默认同步 INBOX 最近邮件，并用 messageId / uid 去重。</p>
-                <p>3. SMTP 模式使用邮箱授权码发送邮件，页面不会展示授权码。</p>
-              </div>
+              <div class="card-title">结构化结果</div>
+              <div class="card-body" id="parse-summary"></div>
             </div>
 
             <div class="card">
-              <div class="card-title">普通邮箱配置</div>
-              <div class="card-body" id="mail-config-summary">
-                <p>正在读取本地配置...</p>
-              </div>
+              <div class="card-title">物料线索</div>
+              <div class="card-body" id="parse-items"></div>
             </div>
 
             <div class="card">
-              <div class="card-title">注意事项</div>
+              <div class="card-title">Extractor 调试</div>
               <div class="card-body">
-                <p>普通邮箱模式需要邮箱服务商生成的授权码或 app password，不要使用邮箱登录密码。</p>
-                <p>IMAP 模式会读取附件元数据；当前页面只展示元数据，不自动下载附件内容。</p>
-                <p>邮件内容按“不可信外部输入”处理，页面只展示数据，不执行其中的任何指令。</p>
+                <div class="debug-actions">
+                  <button class="secondary-button" id="extract-button" type="button">抽取 content_blocks</button>
+                  <button class="secondary-button" id="analyze-button" type="button">分析订单信息</button>
+                  <span class="attachment-meta" id="extract-status">等待抽取</span>
+                </div>
+                <pre class="extract-json" id="extract-output"></pre>
               </div>
             </div>
           </div>
         </section>
       </section>
     </main>
+
+    <dialog class="guide-dialog" id="guide-dialog">
+      <div class="panel-header">
+        <h3>导入说明</h3>
+        <span id="mail-mode-label">本地导入</span>
+        <button class="icon-button" id="guide-close-button" type="button" aria-label="关闭导入说明" title="关闭">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 7l10 10" stroke-width="2" stroke-linecap="round"></path>
+            <path d="M17 7L7 17" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="card-title">当前流程</div>
+          <div class="card-body" id="import-summary">
+            <p>1. 根据 MAIL_MODE 选择 agent 邮箱或普通 IMAP/SMTP 邮箱。</p>
+            <p>2. IMAP 模式默认同步 INBOX 最近邮件，并用 messageId / uid 去重。</p>
+            <p>3. SMTP 模式使用邮箱授权码发送邮件，页面不会展示授权码。</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">普通邮箱配置</div>
+          <div class="card-body" id="mail-config-summary">
+            <p>正在读取本地配置...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">注意事项</div>
+          <div class="card-body">
+            <p>普通邮箱模式需要邮箱服务商生成的授权码或 app password，不要使用邮箱登录密码。</p>
+            <p>IMAP 模式会读取附件元数据；当前页面只展示元数据，不自动下载附件内容。</p>
+            <p>邮件内容按“不可信外部输入”处理，页面只展示数据，不执行其中的任何指令。</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
 
     <script src="./mail-data.js"></script>
     <script>
@@ -536,11 +717,23 @@
       const statusElement = document.getElementById("status-text");
       const hintElement = document.getElementById("list-hint");
       const importButton = document.getElementById("import-button");
+      const guideButton = document.getElementById("guide-button");
+      const guideCloseButton = document.getElementById("guide-close-button");
+      const guideDialog = document.getElementById("guide-dialog");
       const mailModeLabel = document.getElementById("mail-mode-label");
       const mailConfigSummary = document.getElementById("mail-config-summary");
+      const parseStatusElement = document.getElementById("parse-status");
+      const parseSummaryContainer = document.getElementById("parse-summary");
+      const parseItemsContainer = document.getElementById("parse-items");
+      const extractButton = document.getElementById("extract-button");
+      const analyzeButton = document.getElementById("analyze-button");
+      const extractStatus = document.getElementById("extract-status");
+      const extractOutput = document.getElementById("extract-output");
 
       let mailRecords = [];
       let activeMailId = "";
+      let parseRequestId = 0;
+      const extractedContentCache = new Map();
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -700,6 +893,140 @@
           .join("");
       }
 
+      async function fetchExtractedContent(mailId) {
+        if (!mailId) {
+          return null;
+        }
+        if (extractedContentCache.has(mailId)) {
+          return extractedContentCache.get(mailId);
+        }
+
+        const response = await fetch(`/api/mail/${encodeURIComponent(mailId)}/extract-content`, {
+          method: "POST"
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || "抽取失败");
+        }
+        extractedContentCache.set(mailId, payload);
+        return payload;
+      }
+
+      function getBlocksText(contentBlocks) {
+        return (contentBlocks || [])
+          .filter((block) => block.type === "body_text" || block.type === "table" || block.type === "spreadsheet" || block.type === "pdf_text" || block.type === "image_ocr")
+          .map((block) => block.text || "")
+          .join("\n");
+      }
+
+      function detectIntent(text) {
+        if (/询价|报价|quote|quotation|rfq|price/i.test(text)) {
+          return "询价/报价";
+        }
+        if (/订单|采购|purchase order|po\b|下单/i.test(text)) {
+          return "订单/采购";
+        }
+        if (/交期|货期|delivery|lead time/i.test(text)) {
+          return "交期确认";
+        }
+        return "待判断";
+      }
+
+      function extractItemSignalsFromBlocks(contentBlocks) {
+        const lines = getBlocksText(contentBlocks).split("\n").map((line) => line.trim()).filter(Boolean);
+        const codePattern = /[A-Z]{1,8}\s?[-_/]?\s?\d[\w./-]*(?:[-_/]\w+)*/g;
+        const quantityPattern = /(数量|qty|quantity|pcs|个|只|套|件)\s*[:：]?\s*\d+/i;
+        const matches = [];
+
+        lines.forEach((line) => {
+          const codes = line.match(codePattern) || [];
+          if (codes.length || quantityPattern.test(line)) {
+            matches.push({
+              line,
+              codes: [...new Set(codes)].slice(0, 4),
+              hasQuantity: quantityPattern.test(line)
+            });
+          }
+        });
+
+        return matches.slice(0, 8);
+      }
+
+      function getAttachmentBlocks(contentBlocks) {
+        return (contentBlocks || []).filter((block) => block.type === "attachment");
+      }
+
+      async function renderParse(mail) {
+        const currentRequestId = ++parseRequestId;
+        if (!mail) {
+          parseStatusElement.textContent = "等待邮件";
+          parseSummaryContainer.innerHTML = "<p class=\"parse-empty\">暂无可解析邮件</p>";
+          parseItemsContainer.innerHTML = "<p class=\"parse-empty\">暂无物料线索</p>";
+          return;
+        }
+
+        parseStatusElement.textContent = "抽取中";
+        parseSummaryContainer.innerHTML = "<p class=\"parse-empty\">正在从 Extractor 读取 content_blocks...</p>";
+        parseItemsContainer.innerHTML = "<p class=\"parse-empty\">正在识别物料线索...</p>";
+
+        let extracted;
+        try {
+          extracted = await fetchExtractedContent(mail.id);
+        } catch (error) {
+          if (currentRequestId !== parseRequestId) {
+            return;
+          }
+          parseStatusElement.textContent = "抽取失败";
+          parseSummaryContainer.innerHTML = `<p class="parse-empty">${escapeHtml(error.message || "抽取失败")}</p>`;
+          parseItemsContainer.innerHTML = "<p class=\"parse-empty\">无法读取 content_blocks</p>";
+          return;
+        }
+
+        if (currentRequestId !== parseRequestId) {
+          return;
+        }
+
+        const contentBlocks = extracted?.content_blocks || [];
+        const bodyBlocks = contentBlocks.filter((block) => block.type === "body_text");
+        const tableBlocks = contentBlocks.filter((block) => block.type === "table");
+        const spreadsheetBlocks = contentBlocks.filter((block) => block.type === "spreadsheet");
+        const pdfBlocks = contentBlocks.filter((block) => block.type === "pdf_text");
+        const imageOcrBlocks = contentBlocks.filter((block) => block.type === "image_ocr");
+        const attachmentBlocks = getAttachmentBlocks(contentBlocks);
+        const text = getBlocksText(contentBlocks);
+        const intent = detectIntent(text);
+        const itemSignals = extractItemSignalsFromBlocks(contentBlocks);
+        const confidence = itemSignals.length || attachmentBlocks.length || intent !== "待判断" ? "已解析" : "待补充";
+
+        parseStatusElement.textContent = confidence;
+        parseSummaryContainer.innerHTML = `
+          <div class="field-list">
+            <div class="field-row"><div class="field-label">业务类型</div><div>${escapeHtml(intent)}</div></div>
+            <div class="field-row"><div class="field-label">客户来源</div><div>${escapeHtml(extracted.from || mail.listEmail || mail.sender || "未知")}</div></div>
+            <div class="field-row"><div class="field-label">正文块</div><div>${bodyBlocks.length} 个</div></div>
+            <div class="field-row"><div class="field-label">表格块</div><div>${tableBlocks.length} 个</div></div>
+            <div class="field-row"><div class="field-label">表格附件</div><div>${spreadsheetBlocks.length} 个</div></div>
+            <div class="field-row"><div class="field-label">PDF 文本</div><div>${pdfBlocks.length} 个</div></div>
+            <div class="field-row"><div class="field-label">图片 OCR</div><div>${imageOcrBlocks.length} 个</div></div>
+            <div class="field-row"><div class="field-label">附件块</div><div>${attachmentBlocks.length} 个</div></div>
+          </div>
+        `;
+
+        parseItemsContainer.innerHTML = itemSignals.length
+          ? `<div class="parse-list">${itemSignals.map((item) => `
+              <div class="parse-item">
+                <strong>${escapeHtml(item.codes.length ? item.codes.join(", ") : "疑似数量/规格行")}</strong>
+                <div>${escapeHtml(item.line)}</div>
+              </div>
+            `).join("")}</div>`
+          : "<p class=\"parse-empty\">未识别到明显物料型号或数量，请查看正文和附件。</p>";
+      }
+
+      function resetExtractDebug() {
+        extractStatus.textContent = activeMailId ? "等待抽取" : "请选择邮件";
+        extractOutput.textContent = "";
+      }
+
       function setActiveMail(mailId) {
         activeMailId = mailId;
         const activeMail = mailRecords.find((mail) => mail.id === mailId);
@@ -707,6 +1034,8 @@
         renderMeta(activeMail);
         renderBody(activeMail);
         renderAttachments(activeMail);
+        renderParse(activeMail);
+        resetExtractDebug();
       }
 
       function loadEmbeddedMails() {
@@ -826,7 +1155,74 @@
         }
       }
 
+      async function extractActiveMailContent() {
+        if (!activeMailId) {
+          extractStatus.textContent = "请选择邮件";
+          return;
+        }
+
+        extractButton.disabled = true;
+        extractStatus.textContent = "正在抽取...";
+
+        try {
+          const response = await fetch(`/api/mail/${encodeURIComponent(activeMailId)}/extract-content`, {
+            method: "POST"
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "抽取失败");
+          }
+          extractedContentCache.set(activeMailId, payload);
+          extractStatus.textContent = `完成：${payload.content_blocks?.length || 0} 个 block`;
+          extractOutput.textContent = JSON.stringify(payload, null, 2);
+        } catch (error) {
+          extractStatus.textContent = error.message || "抽取失败";
+          extractOutput.textContent = "";
+        } finally {
+          extractButton.disabled = false;
+        }
+      }
+
+      async function analyzeActiveMailOrder() {
+        if (!activeMailId) {
+          extractStatus.textContent = "请选择邮件";
+          return;
+        }
+
+        analyzeButton.disabled = true;
+        extractStatus.textContent = "正在分析订单信息...";
+
+        try {
+          const response = await fetch(`/api/mail/${encodeURIComponent(activeMailId)}/analyze-order`, {
+            method: "POST"
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "分析失败");
+          }
+          extractStatus.textContent = `分析完成：${payload.quantities?.length || 0} 个数量`;
+          extractOutput.textContent = `${payload.summary_text || "暂无分析摘要"}\n\n--- 结构化 JSON ---\n${JSON.stringify(payload, null, 2)}`;
+        } catch (error) {
+          extractStatus.textContent = error.message || "分析失败";
+          extractOutput.textContent = "";
+        } finally {
+          analyzeButton.disabled = false;
+        }
+      }
+
       importButton.addEventListener("click", importInbox);
+      extractButton.addEventListener("click", extractActiveMailContent);
+      analyzeButton.addEventListener("click", analyzeActiveMailOrder);
+      guideButton.addEventListener("click", () => {
+        if (typeof guideDialog.showModal === "function") {
+          guideDialog.showModal();
+          return;
+        }
+        guideDialog.setAttribute("open", "");
+      });
+      guideCloseButton.addEventListener("click", () => {
+        guideDialog.close();
+      });
 
       setActiveMail(activeMailId);
       loadMailConfig();

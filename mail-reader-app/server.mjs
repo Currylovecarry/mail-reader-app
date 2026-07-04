@@ -12,6 +12,8 @@ import {
   readStoredMails,
   sendSmtpMail
 } from "./mail-service.mjs";
+import { extractEmailContent } from "./content-extractor.mjs";
+import { analyzeOrderContent } from "./order-analysis-service.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,6 +85,11 @@ function sanitizeError(error) {
   return message;
 }
 
+function findStoredMail(stored, emailId) {
+  const decodedId = decodeURIComponent(emailId || "");
+  return (Array.isArray(stored.mails) ? stored.mails : []).find((mail) => mail.id === decodedId);
+}
+
 await loadDotEnv();
 await ensureStorage();
 
@@ -120,6 +127,45 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    const extractMatch = url.pathname.match(/^\/api\/mail\/(.+)\/extract-content$/);
+    if (request.method === "POST" && extractMatch) {
+      const emailId = extractMatch[1];
+      const stored = await readStoredMails();
+      const mail = findStoredMail(stored, emailId);
+      if (!mail) {
+        console.warn(`[extract-content] mail not found: ${decodeURIComponent(emailId || "")}`);
+        sendJson(response, 404, { error: "邮件不存在" });
+        return;
+      }
+
+      const payload = await extractEmailContent(mail);
+      console.info(
+        `[extract-content] email_id=${mail.id} blocks=${payload.content_blocks.length}`
+      );
+      sendJson(response, 200, payload);
+      return;
+    }
+
+    const analyzeMatch = url.pathname.match(/^\/api\/mail\/(.+)\/analyze-order$/);
+    if (request.method === "POST" && analyzeMatch) {
+      const emailId = analyzeMatch[1];
+      const stored = await readStoredMails();
+      const mail = findStoredMail(stored, emailId);
+      if (!mail) {
+        console.warn(`[analyze-order] mail not found: ${decodeURIComponent(emailId || "")}`);
+        sendJson(response, 404, { error: "邮件不存在" });
+        return;
+      }
+
+      const extracted = await extractEmailContent(mail);
+      const payload = analyzeOrderContent(extracted);
+      console.info(
+        `[analyze-order] email_id=${mail.id} quantities=${payload.quantities.length} business_type=${payload.business_type.code} product_type=${payload.product_type.code}`
+      );
+      sendJson(response, 200, payload);
+      return;
+    }
+
     if (request.method === "GET" && url.pathname.startsWith("/attachments/")) {
       const relativePath = decodeURIComponent(url.pathname.replace("/attachments/", ""));
       const targetPath = path.resolve(attachmentDir, relativePath);
@@ -133,6 +179,7 @@ const server = createServer(async (request, response) => {
 
     sendJson(response, 404, { error: "接口不存在" });
   } catch (error) {
+    console.error(`[server] ${sanitizeError(error)}`);
     sendJson(response, 500, { error: sanitizeError(error) });
   }
 });
