@@ -44,6 +44,17 @@ node mail-reader-app/import-mails.mjs
 
 IMAP mode reads `INBOX` by default, fetches up to 30 recent mails, stores normalized messages in `mail-reader-app/data/imported-mails.json`, and keeps sync state there. It uses `messageId` first and `uid` as a fallback to avoid importing the same mail twice. Logs report scanned, added, and skipped counts.
 
+## Order Recognition Storage
+
+When `POST /api/mail/:emailId/generate-order-draft` succeeds, the recognized order is saved to the local SQLite file `data/order-recognition.db`. It stores the order's key requirements and its recognized model, quantity, unit, and confidence values. Re-generating the same email replaces its previous items rather than creating duplicates.
+
+Matching services can read the intermediate records through:
+
+- `GET /api/order-recognitions`
+- `GET /api/order-recognitions/:id`
+
+Each item exposes both `model_raw` and `model_normalized`; matching logic should use the latter as its stable input while retaining the former for display and review.
+
 ## Send Mail
 
 The backend exposes `POST /api/mail/send` with JSON:

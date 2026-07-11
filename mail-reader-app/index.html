@@ -96,12 +96,6 @@
         line-height: 1.4;
       }
 
-      .brand-subtitle {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
       .nav-actions {
         display: flex;
         align-items: center;
@@ -258,21 +252,6 @@
         padding: 12px;
       }
 
-      .search-box,
-      .hint-box {
-        margin-bottom: 12px;
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        color: var(--muted);
-        font-size: 12px;
-        background: var(--soft);
-      }
-
-      .hint-box {
-        line-height: 1.6;
-      }
-
       .mail-item {
         padding: 12px;
         border: 1px solid var(--line);
@@ -397,6 +376,21 @@
         align-items: center;
         gap: 10px;
         flex-wrap: wrap;
+      }
+
+      .plain-summary {
+        margin: 12px 0 0;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f9fafb;
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .plain-summary:empty {
+        display: none;
       }
 
       .extract-json {
@@ -584,7 +578,6 @@
           <div class="brand-badge">AD</div>
           <div class="brand-copy">
             <div class="brand-title">邮件结构化提取台</div>
-            <div class="brand-subtitle">聚焦真实邮件查看、附件定位与后续处理准备</div>
           </div>
         </div>
         <div class="nav-actions">
@@ -606,10 +599,7 @@
             <h3>邮件列表</h3>
             <span id="mail-count">0 封</span>
           </div>
-          <div class="mail-list" id="mail-list">
-            <div class="search-box">展示最近导入的收件箱邮件</div>
-            <div class="hint-box" id="list-hint">运行导入脚本并刷新页面后，这里会显示真实收件箱内容。</div>
-          </div>
+          <div class="mail-list" id="mail-list"></div>
         </aside>
 
         <section class="panel">
@@ -655,10 +645,12 @@
               <div class="card-title">Extractor 调试</div>
               <div class="card-body">
                 <div class="debug-actions">
-                  <button class="secondary-button" id="extract-button" type="button">抽取 content_blocks</button>
+                  <button class="secondary-button" id="extract-button" type="button">生成标准化内容</button>
                   <button class="secondary-button" id="analyze-button" type="button">分析订单信息</button>
-                  <span class="attachment-meta" id="extract-status">等待抽取</span>
+                  <button class="secondary-button" id="draft-button" type="button">LLM 提取订单信息</button>
+                  <span class="attachment-meta" id="extract-status">等待生成</span>
                 </div>
+                <div class="plain-summary" id="plain-summary"></div>
                 <pre class="extract-json" id="extract-output"></pre>
               </div>
             </div>
@@ -715,7 +707,6 @@
       const countElement = document.getElementById("mail-count");
       const sourceElement = document.getElementById("mail-source");
       const statusElement = document.getElementById("status-text");
-      const hintElement = document.getElementById("list-hint");
       const importButton = document.getElementById("import-button");
       const guideButton = document.getElementById("guide-button");
       const guideCloseButton = document.getElementById("guide-close-button");
@@ -727,7 +718,9 @@
       const parseItemsContainer = document.getElementById("parse-items");
       const extractButton = document.getElementById("extract-button");
       const analyzeButton = document.getElementById("analyze-button");
+      const draftButton = document.getElementById("draft-button");
       const extractStatus = document.getElementById("extract-status");
+      const plainSummaryElement = document.getElementById("plain-summary");
       const extractOutput = document.getElementById("extract-output");
 
       let mailRecords = [];
@@ -798,11 +791,8 @@
         countElement.textContent = `${mailRecords.length} 封`;
 
         if (!mailRecords.length) {
-          hintElement.textContent = "还没有导入数据。运行导入脚本并刷新页面后，这里会显示真实收件箱内容。";
           return;
         }
-
-        hintElement.textContent = "当前展示的是最近一次导入的收件箱邮件。";
 
         mailRecords.forEach((mail) => {
           const article = document.createElement("article");
@@ -1023,7 +1013,8 @@
       }
 
       function resetExtractDebug() {
-        extractStatus.textContent = activeMailId ? "等待抽取" : "请选择邮件";
+        extractStatus.textContent = activeMailId ? "等待生成" : "请选择邮件";
+        plainSummaryElement.textContent = "";
         extractOutput.textContent = "";
       }
 
@@ -1044,7 +1035,6 @@
           mailRecords = payload.mails;
           activeMailId = payload.mails[0].id;
           sourceElement.textContent = "真实收件箱";
-          hintElement.textContent = `当前展示的是 ${payload.alias || "邮箱"} 最近一次导入的 ${payload.mails.length} 封真实邮件。`;
           setStatus("已加载本地导入结果", "success");
           setActiveMail(activeMailId);
           return true;
@@ -1092,7 +1082,6 @@
             mailRecords = payload.mails;
             activeMailId = payload.mails[0].id;
             sourceElement.textContent = "真实收件箱";
-            hintElement.textContent = `当前展示的是 ${payload.alias || "邮箱"} 最近一次导入的 ${payload.mails.length} 封真实邮件。`;
             setStatus("已加载最近一次导入结果", "success");
             setActiveMail(activeMailId);
             return;
@@ -1104,7 +1093,6 @@
         }
 
         sourceElement.textContent = "等待导入";
-        hintElement.textContent = "还没有导入数据。运行导入脚本并刷新页面后，这里会显示真实收件箱内容。";
         setActiveMail(activeMailId);
       }
 
@@ -1141,7 +1129,6 @@
           mailRecords = payload.mails || [];
           activeMailId = mailRecords[0]?.id || "";
           sourceElement.textContent = "真实收件箱";
-          hintElement.textContent = `刚刚从 ${payload.alias || "邮箱"} 同步了 ${mailRecords.length} 封邮件。`;
           const syncLog = payload.syncLog || {};
           setStatus(
             `同步完成：扫描 ${syncLog.scanned || 0}，新增 ${syncLog.added || 0}，覆盖 ${syncLog.replaced || 0}，跳过重复 ${syncLog.skipped || 0}，跳过过旧 ${syncLog.skippedOld || 0}`,
@@ -1162,7 +1149,7 @@
         }
 
         extractButton.disabled = true;
-        extractStatus.textContent = "正在抽取...";
+        extractStatus.textContent = "正在生成标准化内容...";
 
         try {
           const response = await fetch(`/api/mail/${encodeURIComponent(activeMailId)}/extract-content`, {
@@ -1170,13 +1157,13 @@
           });
           const payload = await response.json();
           if (!response.ok) {
-            throw new Error(payload.error || "抽取失败");
+            throw new Error(payload.error || "标准化内容生成失败");
           }
           extractedContentCache.set(activeMailId, payload);
-          extractStatus.textContent = `完成：${payload.content_blocks?.length || 0} 个 block`;
+          extractStatus.textContent = `生成完成：${payload.content_blocks?.length || 0} 个内容块`;
           extractOutput.textContent = JSON.stringify(payload, null, 2);
         } catch (error) {
-          extractStatus.textContent = error.message || "抽取失败";
+          extractStatus.textContent = error.message || "标准化内容生成失败";
           extractOutput.textContent = "";
         } finally {
           extractButton.disabled = false;
@@ -1210,9 +1197,50 @@
         }
       }
 
+      async function generateActiveMailOrderDraft() {
+        if (!activeMailId) {
+          extractStatus.textContent = "请选择邮件";
+          return;
+        }
+
+        draftButton.disabled = true;
+        extractStatus.textContent = "正在由 LLM 提取订单信息...";
+
+        try {
+          const response = await fetch(`/api/mail/${encodeURIComponent(activeMailId)}/generate-order-draft`, {
+            method: "POST"
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "生成失败");
+          }
+
+          if (payload.status === "success") {
+            extractStatus.textContent = `草稿完成：${payload.order_draft?.products?.length || 0} 个产品`;
+          } else {
+            extractStatus.textContent = payload.error || "草稿生成失败";
+          }
+
+          plainSummaryElement.textContent = payload.plain_summary || "";
+          extractOutput.textContent = [
+            payload.status === "success" ? "LLM 订单信息提取成功" : "LLM 订单信息提取失败",
+            "",
+            "--- 返回 JSON ---",
+            JSON.stringify(payload, null, 2)
+          ].join("\n");
+        } catch (error) {
+          extractStatus.textContent = error.message || "生成失败";
+          plainSummaryElement.textContent = "";
+          extractOutput.textContent = "";
+        } finally {
+          draftButton.disabled = false;
+        }
+      }
+
       importButton.addEventListener("click", importInbox);
       extractButton.addEventListener("click", extractActiveMailContent);
       analyzeButton.addEventListener("click", analyzeActiveMailOrder);
+      draftButton.addEventListener("click", generateActiveMailOrderDraft);
       guideButton.addEventListener("click", () => {
         if (typeof guideDialog.showModal === "function") {
           guideDialog.showModal();

@@ -2,11 +2,16 @@ const quantityColumnNames = new Set([
   "qty",
   "quantity",
   "数量",
+  "订购数量",
+  "采购数量",
+  "需求数量",
   "orderqty",
   "orderquantity",
+  "requiredqty",
   "requiredquantity",
   "amount"
 ]);
+const unitColumnNames = new Set(["单位", "unit", "uom"]);
 
 const quantityUnits = ["pcs", "pieces", "units", "sets", "个", "件", "台", "套", "箱", "包"];
 const quantityUnitPattern = "(pcs|pieces|units|sets|个|件|台|套|箱|包)";
@@ -179,7 +184,7 @@ function extractQuantities(contentBlocks) {
   const seen = new Set();
 
   for (const block of contentBlocks) {
-    if (block?.type === "table" || block?.type === "spreadsheet") {
+    if (["table", "spreadsheet", "image_ocr"].includes(block?.type) && Array.isArray(block?.rows)) {
       extractQuantitiesFromRows(block).forEach((item) => addUniqueQuantity(results, seen, item));
     }
   }
@@ -199,12 +204,14 @@ function extractQuantitiesFromRows(block) {
       return;
     }
 
+    const rowUnit = findRowUnit(row);
+
     Object.entries(row).forEach(([columnName, value]) => {
       if (!isQuantityColumn(columnName)) {
         return;
       }
 
-      const parsed = parseQuantityValue(value, `${columnName}: ${value}`);
+      const parsed = parseQuantityValue(value, `${columnName}: ${value}`, rowUnit);
       if (!parsed) {
         return;
       }
@@ -251,7 +258,7 @@ function normalizeColumnName(columnName) {
     .replace(/[\s_：:.-]+/g, "");
 }
 
-function parseQuantityValue(value, fallbackRawText) {
+function parseQuantityValue(value, fallbackRawText, fallbackUnit = "") {
   const text = String(value ?? "").trim();
   if (!text) {
     return null;
@@ -260,7 +267,7 @@ function parseQuantityValue(value, fallbackRawText) {
   if (withUnit) {
     return {
       value: parseNumber(withUnit[1]),
-      unit: normalizeUnit(withUnit[2] || ""),
+      unit: normalizeUnit(withUnit[2] || fallbackUnit || ""),
       rawText: fallbackRawText
     };
   }
@@ -271,9 +278,19 @@ function parseQuantityValue(value, fallbackRawText) {
   }
   return {
     value: parseNumber(firstNumber[1]),
-    unit: "",
+    unit: normalizeUnit(fallbackUnit || ""),
     rawText: fallbackRawText
   };
+}
+
+function findRowUnit(row) {
+  for (const [columnName, value] of Object.entries(row || {})) {
+    if (!unitColumnNames.has(normalizeColumnName(columnName))) {
+      continue;
+    }
+    return String(value || "").trim();
+  }
+  return "";
 }
 
 function findQuantityMatches(text) {
@@ -453,13 +470,16 @@ function extractProductModels(contentBlocks) {
   const seen = new Set();
 
   for (const block of contentBlocks) {
-    if (block?.type === "table" || block?.type === "spreadsheet") {
+    if (["table", "spreadsheet", "image_ocr"].includes(block?.type) && Array.isArray(block?.rows)) {
       extractModelsFromRows(block).forEach((model) => addUniqueModel(results, seen, model));
     }
   }
 
   for (const block of contentBlocks) {
     if (!["body_text", "table", "spreadsheet", "pdf_text", "image_ocr"].includes(block?.type)) {
+      continue;
+    }
+    if (block?.type === "image_ocr" && Array.isArray(block?.rows) && block.rows.length) {
       continue;
     }
     extractModelsFromText(block).forEach((model) => addUniqueModel(results, seen, model));

@@ -10,6 +10,25 @@ const attachmentRoot = path.join(__dirname, "imported-attachments");
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_ROWS = 200;
 const MAX_COLUMNS = 50;
+const HEADER_SCAN_LIMIT = 20;
+const HIGH_CONFIDENCE_HEADER_SCORE = 3;
+const headerKeywords = [
+  "序号",
+  "产品型号",
+  "型号",
+  "产品名称",
+  "名称",
+  "数量",
+  "单位",
+  "备注",
+  "model",
+  "item",
+  "product",
+  "qty",
+  "quantity",
+  "unit",
+  "remark"
+];
 
 const spreadsheetExtensions = new Set([".xlsx", ".xls", ".csv"]);
 const spreadsheetMimeTypes = new Set([
@@ -108,7 +127,7 @@ async function extractWorkbookBlocks(filePath, filename) {
   const blocks = [];
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName];
-    const matrix = normalizeMatrix(xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false, raw: false }));
+    const matrix = normalizeMatrix(xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: true, raw: false }), { preserveEmptyRows: true });
     if (!matrix.length) {
       continue;
     }
@@ -125,7 +144,7 @@ async function extractWorkbookBlocks(filePath, filename) {
 
 async function extractCsvBlock(filePath, filename) {
   const content = await fs.readFile(filePath, "utf8");
-  const matrix = normalizeMatrix(parseCsv(content.replace(/^\uFEFF/, "")));
+  const matrix = normalizeMatrix(parseCsv(content.replace(/^\uFEFF/, "")), { preserveEmptyRows: true });
   if (!matrix.length) {
     return createEmptySpreadsheetBlock(filename, "csv");
   }
@@ -183,10 +202,11 @@ function parseCsv(content) {
   return rows;
 }
 
-function normalizeMatrix(matrix) {
+function normalizeMatrix(matrix, options = {}) {
+  const preserveEmptyRows = Boolean(options.preserveEmptyRows);
   return (Array.isArray(matrix) ? matrix : [])
     .map((row) => (Array.isArray(row) ? row : []).map((cell) => normalizeCell(cell)))
-    .filter((row) => row.some(Boolean));
+    .filter((row) => preserveEmptyRows || row.some(Boolean));
 }
 
 function normalizeCell(value) {
@@ -199,14 +219,18 @@ function matrixToBlock(matrix, options) {
   const limitedMatrix = matrix.slice(0, MAX_ROWS + 1).map((row) => row.slice(0, MAX_COLUMNS));
   const truncatedRows = matrix.length > MAX_ROWS + 1;
   const firstRow = limitedMatrix[0] || [];
-  const headerDetected = isLikelyHeader(firstRow);
+  const headerCandidate = detectHeaderRow(limitedMatrix);
+  const fallbackColumnCount = Math.max(firstRow.length, 1);
+  const headerRowIndex = headerCandidate?.index ?? 0;
+  const headerDetected = Boolean(headerCandidate);
   const headers = headerDetected
-    ? normalizeHeaders(firstRow)
-    : Array.from({ length: Math.max(firstRow.length, 1) }, (_value, index) => `Column ${index + 1}`);
-  const dataRows = headerDetected ? limitedMatrix.slice(1) : limitedMatrix;
+    ? normalizeHeaders(limitedMatrix[headerRowIndex] || [])
+    : Array.from({ length: fallbackColumnCount }, (_value, index) => `Column ${index + 1}`);
+  const dataRows = (headerDetected ? limitedMatrix.slice(headerRowIndex + 1) : limitedMatrix).filter((row) => row.some(Boolean));
   const rows = dataRows.map((row) => rowToObject(row, headers));
   const text = rowsToMarkdown(headers, rows);
   const truncated = truncatedRows || truncatedColumns;
+  const metadata = headerDetected ? collectSheetMetadata(limitedMatrix.slice(0, headerRowIndex)) : {};
 
   if (truncated) {
     console.info(
@@ -228,7 +252,11 @@ function matrixToBlock(matrix, options) {
       parser: options.parser,
       status: "parsed",
       ...(truncated ? { truncated: true } : {}),
-      header_detected: headerDetected
+      header_detected: headerDetected,
+      header_row_index: headerDetected ? headerRowIndex + 1 : 1,
+      data_start_row_index: headerDetected ? Math.min(headerRowIndex + 2, limitedMatrix.length + 1) : 2,
+      header_confidence: headerCandidate?.confidence || "low",
+      ...(Object.keys(metadata).length ? { sheet_metadata: metadata } : {})
     }
   };
 }
@@ -240,6 +268,101 @@ function isLikelyHeader(row) {
   }
   const textCells = cells.filter((cell) => /[A-Za-z\u4e00-\u9fa5]/.test(cell));
   return textCells.length > 0 && textCells.length >= Math.ceil(cells.length / 2);
+}
+
+function detectHeaderRow(matrix) {
+  const scanRows = matrix.slice(0, HEADER_SCAN_LIMIT);
+  let bestCandidate = null;
+
+  scanRows.forEach((row, index) => {
+    const score = scoreHeaderRow(row);
+    if (score <= 0) {
+      return;
+    }
+
+    const candidate = {
+      index,
+      score,
+      confidence: score >= HIGH_CONFIDENCE_HEADER_SCORE ? "high" : "low"
+    };
+
+    if (!bestCandidate || candidate.score > bestCandidate.score || (candidate.score === bestCandidate.score && candidate.index < bestCandidate.index)) {
+      bestCandidate = candidate;
+    }
+  });
+
+  if (bestCandidate && bestCandidate.score >= HIGH_CONFIDENCE_HEADER_SCORE) {
+    return bestCandidate;
+  }
+
+  if (isLikelyHeader(matrix[0] || [])) {
+    return {
+      index: 0,
+      score: Math.max(scoreHeaderRow(matrix[0] || []), 1),
+      confidence: bestCandidate ? "low" : "high"
+    };
+  }
+
+  return {
+    index: 0,
+    score: 0,
+    confidence: "low"
+  };
+}
+
+function scoreHeaderRow(row) {
+  const normalizedCells = row
+    .map((cell) => normalizeHeaderToken(cell))
+    .filter(Boolean);
+
+  if (!normalizedCells.length) {
+    return 0;
+  }
+
+  const matched = new Set();
+  normalizedCells.forEach((cell) => {
+    headerKeywords.forEach((keyword) => {
+      const normalizedKeyword = normalizeHeaderToken(keyword);
+      if (cell === normalizedKeyword || cell.includes(normalizedKeyword) || normalizedKeyword.includes(cell)) {
+        matched.add(normalizedKeyword);
+      }
+    });
+  });
+
+  return matched.size;
+}
+
+function normalizeHeaderToken(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\s_：:;；,.，、/\\()（）[\]{}-]+/g, "");
+}
+
+function collectSheetMetadata(rows) {
+  const metadata = {};
+  rows.forEach((row) => {
+    const cells = row.filter(Boolean);
+    if (cells.length < 2) {
+      return;
+    }
+
+    const key = String(cells[0] || "").trim();
+    const value = String(cells[1] || "").trim();
+    if (!key || !value) {
+      return;
+    }
+
+    if (cells.length > 2 && cells.slice(2).some(Boolean)) {
+      return;
+    }
+
+    if (scoreHeaderRow([key, value]) >= HIGH_CONFIDENCE_HEADER_SCORE) {
+      return;
+    }
+
+    metadata[key] = value;
+  });
+  return metadata;
 }
 
 function normalizeHeaders(row) {

@@ -13,6 +13,8 @@ const MAX_WIDTH = 6000;
 const MAX_HEIGHT = 6000;
 const MAX_PIXELS = 16 * 1000 * 1000;
 const OCR_TIMEOUT_MS = 90 * 1000;
+const PSM_AUTO = "3";
+const PSM_SINGLE_COLUMN = "4";
 const DEFAULT_OCR_LANGUAGES = ["eng", "chi_sim", "deu"];
 const OCR_LANGUAGES = parseOcrLanguages(process.env.OCR_LANGUAGES);
 const OCR_LANGUAGE_LABEL = OCR_LANGUAGES.join("+");
@@ -77,6 +79,7 @@ export async function extractImageOcrBlocks(attachment) {
     const result = await runOcrWithTimeout(filePath);
     const text = normalizeOcrText(result.text);
     const confidence = normalizeConfidence(result.confidence);
+    const rows = result.tableRows || [];
 
     if (!text) {
       console.info(
@@ -94,12 +97,16 @@ export async function extractImageOcrBlocks(attachment) {
         type: "image_ocr",
         source: filename,
         text,
+        ...(rows.length ? { rows } : {}),
         confidence,
         metadata: {
           filename,
           mime_type: mimeType,
           parser: "ocr",
           ocr_engine: "tesseract.js",
+          ocr_page_segmentation_mode: result.psm,
+          table_layout_detected: result.tableLayoutDetected,
+          ...(rows.length ? { header_detected: true, row_count: rows.length, column_count: Object.keys(rows[0]).length } : {}),
           language: OCR_LANGUAGE_LABEL,
           languages: OCR_LANGUAGES,
           status: "parsed",
@@ -298,10 +305,19 @@ async function runOcrWithTimeout(filePath) {
         console.warn(`[image-ocr-extractor] worker_error="${error?.message || error}"`);
       }
     });
-    const result = await worker.recognize(filePath);
+    const autoResult = await recognizeWithPsm(worker, filePath, PSM_AUTO, true);
+    const tableLayoutDetected = isTableLikeLayout(autoResult.tsv);
+
+    if (!tableLayoutDetected) {
+      return { ...autoResult, tableLayoutDetected, tableRows: [] };
+    }
+
+    const singleColumnResult = await recognizeWithPsm(worker, filePath, PSM_SINGLE_COLUMN);
+    const selectedResult = selectBestOcrResult(autoResult, singleColumnResult);
     return {
-      text: result?.data?.text || "",
-      confidence: result?.data?.confidence ?? 0
+      ...selectedResult,
+      tableLayoutDetected,
+      tableRows: extractTableRowsFromTsv(autoResult.tsv, selectedResult.text)
     };
   })();
 
@@ -326,6 +342,170 @@ async function runOcrWithTimeout(filePath) {
       console.warn(`[image-ocr-extractor] timeout file="${filePath}"`);
     }
   }
+}
+
+async function recognizeWithPsm(worker, filePath, psm, includeTsv = false) {
+  await worker.setParameters({ tessedit_pageseg_mode: psm });
+  const result = await worker.recognize(filePath, {}, includeTsv ? { tsv: true } : undefined);
+  return {
+    text: result?.data?.text || "",
+    confidence: result?.data?.confidence ?? 0,
+    psm,
+    tsv: includeTsv ? result?.data?.tsv || "" : ""
+  };
+}
+
+// A table is identified from OCR geometry, not from business-specific column names.
+// Multiple long text rows with large blank gaps between word groups indicate cells.
+export function isTableLikeLayout(tsv) {
+  const layout = parseTsvLayout(tsv);
+  return layout.lines.filter((line) => isWideGappedLine(line.words, layout.imageWidth)).length >= 2;
+}
+
+// Converts OCR coordinates into the same header-to-row shape used by spreadsheet extraction.
+export function extractTableRowsFromTsv(tsv, replacementText = "") {
+  const layout = parseTsvLayout(tsv);
+  const headerLine = layout.lines.find((line) => {
+    const cells = groupLineWords(line.words, layout.imageWidth);
+    return isWideGappedLine(line.words, layout.imageWidth) && cells.length >= 3;
+  });
+
+  if (!headerLine) {
+    return [];
+  }
+
+  const headerCells = groupLineWords(headerLine.words, layout.imageWidth);
+  const headers = uniqueHeaders(resolveHeaderTexts(headerCells, replacementText));
+  const columnStarts = headerCells.map((cell) => cell.left);
+  const boundaries = columnStarts.slice(1).map((start, index) => (columnStarts[index] + start) / 2);
+
+  return layout.lines
+    .filter((line) => line.top > headerLine.top && line.words.length)
+    .map((line) => {
+      const row = Object.fromEntries(headers.map((header) => [header, ""]));
+      groupLineWords(line.words, layout.imageWidth).forEach((cell) => {
+        const columnIndex = boundaries.findIndex((boundary) => cell.left < boundary);
+        const targetIndex = columnIndex === -1 ? headers.length - 1 : columnIndex;
+        const header = headers[targetIndex];
+        row[header] = [row[header], cell.text].filter(Boolean).join(" ");
+      });
+      return row;
+    })
+    .filter((row) => Object.values(row).some(Boolean));
+}
+
+function parseTsvLayout(tsv) {
+  const wordsByLine = new Map();
+  let imageWidth = 0;
+
+  String(tsv || "").split("\n").slice(1).forEach((row) => {
+    const columns = row.split("\t");
+    if (columns.length < 12) {
+      return;
+    }
+
+    const level = Number(columns[0]);
+    const left = Number(columns[6]);
+    const top = Number(columns[7]);
+    const width = Number(columns[8]);
+    const height = Number(columns[9]);
+    const text = String(columns.slice(11).join("\t") || "").trim();
+
+    if (level === 1 && Number.isFinite(width)) {
+      imageWidth = Math.max(imageWidth, width);
+      return;
+    }
+    if (level !== 5 || !text || ![left, top, width, height].every(Number.isFinite)) {
+      return;
+    }
+
+    const lineKey = columns.slice(1, 5).join(":");
+    const line = wordsByLine.get(lineKey) || { top, words: [] };
+    line.top = Math.min(line.top, top);
+    line.words.push({ text, left, width });
+    wordsByLine.set(lineKey, line);
+    imageWidth = Math.max(imageWidth, left + width);
+  });
+
+  return {
+    imageWidth,
+    lines: [...wordsByLine.values()].map((line) => ({
+      ...line,
+      words: line.words.sort((left, right) => left.left - right.left)
+    })).sort((left, right) => left.top - right.top)
+  };
+}
+
+function isWideGappedLine(words, imageWidth) {
+  if (!imageWidth || words.length < 2) {
+    return false;
+  }
+  const lineStart = words[0].left;
+  const lineEnd = Math.max(...words.map((word) => word.left + word.width));
+  const largestGap = words.slice(1).reduce((largest, word, index) => {
+    const previous = words[index];
+    return Math.max(largest, word.left - (previous.left + previous.width));
+  }, 0);
+  return lineEnd - lineStart >= imageWidth * 0.5 && largestGap >= imageWidth * 0.15;
+}
+
+function groupLineWords(words, imageWidth) {
+  const groupGap = Math.max(24, imageWidth * 0.04);
+  return words.reduce((groups, word) => {
+    const previous = groups.at(-1);
+    if (!previous || word.left - previous.right > groupGap) {
+      groups.push({ text: word.text, left: word.left, right: word.left + word.width, wordCount: 1 });
+      return groups;
+    }
+    previous.text = `${previous.text} ${word.text}`;
+    previous.right = Math.max(previous.right, word.left + word.width);
+    previous.wordCount += 1;
+    return groups;
+  }, []);
+}
+
+function resolveHeaderTexts(headerCells, replacementText) {
+  const replacementHeader = String(replacementText || "").split("\n").find((line) => line.trim()) || "";
+  const words = replacementHeader.trim().split(/\s+/).filter(Boolean);
+  const expectedWordCount = headerCells.reduce((total, cell) => total + cell.wordCount, 0);
+  if (words.length !== expectedWordCount) {
+    return headerCells.map((cell) => cell.text);
+  }
+
+  let cursor = 0;
+  return headerCells.map((cell) => {
+    const header = words.slice(cursor, cursor + cell.wordCount).join(" ");
+    cursor += cell.wordCount;
+    return header;
+  });
+}
+
+function uniqueHeaders(cells) {
+  const used = new Map();
+  return cells.map((value, index) => {
+    const base = String(value || "").trim() || `Column ${index + 1}`;
+    const count = (used.get(base) || 0) + 1;
+    used.set(base, count);
+    return count === 1 ? base : `${base} ${count}`;
+  });
+}
+
+export function selectBestOcrResult(autoResult, singleColumnResult) {
+  const autoScore = scoreOcrResult(autoResult);
+  const singleColumnScore = scoreOcrResult(singleColumnResult);
+  return singleColumnScore > autoScore ? singleColumnResult : autoResult;
+}
+
+function scoreOcrResult(result) {
+  const lines = String(result?.text || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /[A-Za-z0-9\u4e00-\u9fff]/.test(line));
+  const characterCount = lines.join("").replace(/\s/g, "").length;
+  const confidence = Math.max(0, Math.min(100, Number(result?.confidence) || 0));
+
+  // Favor complete, multi-line text first; confidence breaks otherwise-equal results.
+  return lines.length * 100 + characterCount + confidence;
 }
 
 function normalizeOcrText(value) {

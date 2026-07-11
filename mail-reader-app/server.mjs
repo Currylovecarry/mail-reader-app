@@ -14,6 +14,8 @@ import {
 } from "./mail-service.mjs";
 import { extractEmailContent } from "./content-extractor.mjs";
 import { analyzeOrderContent } from "./order-analysis-service.mjs";
+import { generateOrderDraft } from "./llm-order-draft-service.mjs";
+import { orderRecognitionRepository } from "./order-recognition-repository.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,6 +94,7 @@ function findStoredMail(stored, emailId) {
 
 await loadDotEnv();
 await ensureStorage();
+await orderRecognitionRepository.ensureStorage();
 
 const server = createServer(async (request, response) => {
   try {
@@ -110,6 +113,23 @@ const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/mail/list") {
       const stored = await readStoredMails();
       sendJson(response, 200, stored);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/order-recognitions") {
+      const records = await orderRecognitionRepository.listOrderRecognitions();
+      sendJson(response, 200, { records });
+      return;
+    }
+
+    const recognitionMatch = url.pathname.match(/^\/api\/order-recognitions\/(\d+)$/);
+    if (request.method === "GET" && recognitionMatch) {
+      const record = await orderRecognitionRepository.getOrderRecognition(Number(recognitionMatch[1]));
+      if (!record) {
+        sendJson(response, 404, { error: "订单识别结果不存在" });
+        return;
+      }
+      sendJson(response, 200, record);
       return;
     }
 
@@ -161,6 +181,33 @@ const server = createServer(async (request, response) => {
       const payload = analyzeOrderContent(extracted);
       console.info(
         `[analyze-order] email_id=${mail.id} quantities=${payload.quantities.length} business_type=${payload.business_type.code} product_type=${payload.product_type.code}`
+      );
+      sendJson(response, 200, payload);
+      return;
+    }
+
+    const generateDraftMatch = url.pathname.match(/^\/api\/mail\/(.+)\/generate-order-draft$/);
+    if (request.method === "POST" && generateDraftMatch) {
+      const emailId = generateDraftMatch[1];
+      const stored = await readStoredMails();
+      const mail = findStoredMail(stored, emailId);
+      if (!mail) {
+        console.warn(`[generate-order-draft] mail not found: ${decodeURIComponent(emailId || "")}`);
+        sendJson(response, 404, { error: "邮件不存在" });
+        return;
+      }
+
+      const extracted = await extractEmailContent(mail);
+      const payload = await generateOrderDraft(extracted);
+      if (payload.status === "success" && payload.order_draft) {
+        const record = await orderRecognitionRepository.saveOrderDraft(payload.order_draft);
+        payload.persistence = {
+          status: "saved",
+          recognition_order_id: record.id
+        };
+      }
+      console.info(
+        `[generate-order-draft] email_id=${mail.id} status=${payload.status} products=${payload.order_draft?.products?.length || 0}`
       );
       sendJson(response, 200, payload);
       return;
