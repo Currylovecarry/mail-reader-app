@@ -19,4 +19,21 @@ assert.deepEqual(result.product_models.map((item) => item.value), ["GN 425.1 NI 
 assert.deepEqual(result.quantities.map((item) => item.value), [2]);
 assert.equal(result.quantities[0].row_index, 1);
 
+const spacedGnModels = analyzeOrderContent({
+  content_blocks: [{
+    type: "body_text",
+    source: "mail_body",
+    text: [
+      "GN 115-VDE-18-NI ，数量220",
+      "GN 675-50-M8 ，数量50"
+    ].join("\n")
+  }]
+});
+
+assert.deepEqual(
+  spacedGnModels.product_models.map((item) => item.value),
+  ["GN 115-VDE-18-NI", "GN 675-50-M8"]
+);
+assert.deepEqual(spacedGnModels.quantities.map((item) => item.value), [220, 50]);
+
 console.log("order-analysis-service test passed");

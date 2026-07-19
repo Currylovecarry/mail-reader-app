@@ -16,8 +16,8 @@ IMAP_HOST=imap.example.com
 IMAP_PORT=993
 IMAP_SECURE=true
 IMAP_MAILBOX=INBOX
-MAIL_SYNC_LIMIT=30
-MAIL_SYNC_DAYS=30
+MAIL_SYNC_LIMIT=50
+MAIL_SYNC_DAYS=3650
 SMTP_HOST=smtp.example.com
 SMTP_PORT=465
 SMTP_SECURE=true
@@ -42,7 +42,7 @@ node mail-reader-app/import-mails.mjs
 
 ## Sync Behavior
 
-IMAP mode reads `INBOX` by default, fetches up to 30 recent mails, stores normalized messages in `mail-reader-app/data/imported-mails.json`, and keeps sync state there. It uses `messageId` first and `uid` as a fallback to avoid importing the same mail twice. Logs report scanned, added, and skipped counts.
+IMAP mode reads `INBOX` by default, fetches and retains up to 50 recent mails, stores normalized messages in `mail-reader-app/data/imported-mails.json`, and keeps sync state there. It uses `messageId` first and `uid` as a fallback to avoid importing the same mail twice. Logs report scanned, added, and skipped counts.
 
 ## Order Recognition Storage
 

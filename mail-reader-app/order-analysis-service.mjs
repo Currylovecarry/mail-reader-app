@@ -461,8 +461,42 @@ function hasChineseKeywordOutsideCompanyName(text, keyword) {
 }
 
 function findStandardModelSignals(text) {
-  const matches = String(text || "").match(/\b[A-Z]{2,}[A-Z0-9]*(?:[.-][A-Z0-9]+){1,}(?:[-_/][A-Z0-9]+)*\b/g) || [];
-  return [...new Set(matches)].slice(0, 5);
+  const sourceText = String(text || "");
+  const signals = [];
+  const seen = new Set();
+  const occupiedRanges = [];
+  const patterns = [
+    // Catalog models often separate the manufacturer prefix from the numeric code,
+    // for example "GN 115-VDE-18-NI" or "GN 675-50-M8".
+    /\b[A-Z]{1,8}\s+\d[A-Z0-9]*(?:[._/-][A-Z0-9]+)+\b/g,
+    /\b[A-Z]{2,}[A-Z0-9]*(?:[.-][A-Z0-9]+){1,}(?:[-_/][A-Z0-9]+)*\b/g
+  ];
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(sourceText))) {
+      const start = match.index;
+      const end = start + match[0].length;
+      if (occupiedRanges.some((range) => rangesOverlap(start, end, range.start, range.end))) {
+        continue;
+      }
+
+      const value = match[0].replace(/\s+/g, " ").trim();
+      const key = value.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+
+      seen.add(key);
+      occupiedRanges.push({ start, end });
+      signals.push(value);
+      if (signals.length >= 5) {
+        return signals;
+      }
+    }
+  }
+
+  return signals;
 }
 
 function extractProductModels(contentBlocks) {

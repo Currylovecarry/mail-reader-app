@@ -84,8 +84,8 @@ export function getMailConfig() {
       port: toNumber(process.env.IMAP_PORT, 993),
       secure: toBoolean(process.env.IMAP_SECURE, true),
       mailbox: process.env.IMAP_MAILBOX || "INBOX",
-      limit: Math.min(Math.max(toNumber(process.env.MAIL_SYNC_LIMIT, 30), 1), 200),
-      days: Math.min(Math.max(toNumber(process.env.MAIL_SYNC_DAYS, 30), 1), 3650),
+      limit: Math.min(Math.max(toNumber(process.env.MAIL_SYNC_LIMIT, 50), 1), 200),
+      days: Math.min(Math.max(toNumber(process.env.MAIL_SYNC_DAYS, 3650), 1), 3650),
       timeoutMs: Math.min(Math.max(toNumber(process.env.IMAP_TIMEOUT_MS, 30000), 5000), 120000),
       authCode: process.env.MAIL_AUTH_CODE || ""
     },
@@ -460,7 +460,7 @@ async function importAgentInbox(config, options = {}) {
   await ensureStorage();
 
   const alias = String(options.alias || config.agent.alias || defaultAgentAlias);
-  const limit = Math.min(Math.max(Number(options.limit) || 10, 1), 50);
+  const limit = Math.min(Math.max(Number(options.limit) || 50, 1), 50);
   let items = [];
 
   if (alias) {
@@ -1069,6 +1069,7 @@ async function syncImapInbox(config, options = {}) {
   }
 
   const newMails = [];
+  const queuedKeys = new Set();
   let skipped = 0;
   let skippedOld = 0;
   let replaced = 0;
@@ -1082,10 +1083,16 @@ async function syncImapInbox(config, options = {}) {
       skippedOld += 1;
       continue;
     }
-    if (processedKeys.has(key)) {
-      const previous = previousByKey.get(key);
-      if (options.force || (previous && hasReplacementChars(previous) && !hasReplacementChars(mail))) {
+    if (queuedKeys.has(key)) {
+      skipped += 1;
+      continue;
+    }
+    const previous = previousByKey.get(key);
+    if (previous) {
+      if (options.force || (hasReplacementChars(previous) && !hasReplacementChars(mail))) {
         previousMails = previousMails.filter((item) => getDedupKey(item) !== key);
+        previousByKey.delete(key);
+        queuedKeys.add(key);
         newMails.push(mail);
         replaced += 1;
         continue;
@@ -1094,6 +1101,7 @@ async function syncImapInbox(config, options = {}) {
       continue;
     }
     processedKeys.add(key);
+    queuedKeys.add(key);
     newMails.push(mail);
   }
 
