@@ -355,20 +355,33 @@ async function recognizeWithPsm(worker, filePath, psm, includeTsv = false) {
   };
 }
 
-// A table is identified from OCR geometry, not from business-specific column names.
-// Multiple long text rows with large blank gaps between word groups indicate cells.
+const tableHeaderNames = new Set([
+  "part", "partnumber", "material", "model", "modelno", "item", "itemno", "sku",
+  "product", "productname", "description", "name", "qty", "quantity", "unit", "uom",
+  "spec", "specification", "remarks", "remark", "code", "serial",
+  "序号", "产品", "产品名称", "名称", "品名", "型号", "产品型号", "物料", "物料号",
+  "料号", "货号", "数量", "单位", "规格", "备注"
+]);
+
+// Geometry alone mistakes wide web-page layouts for tables. Require a plausible
+// header and at least one later row aligned to that header before producing rows.
 export function isTableLikeLayout(tsv) {
   const layout = parseTsvLayout(tsv);
-  return layout.lines.filter((line) => isWideGappedLine(line.words, layout.imageWidth)).length >= 2;
+  const headerLine = findTableHeaderLine(layout);
+  if (!headerLine) {
+    return false;
+  }
+  const headerCells = groupLineWords(headerLine.words, layout.imageWidth);
+  return layout.lines.some((line) => (
+    line.top > headerLine.top
+    && countAlignedCells(line.words, headerCells, layout.imageWidth) >= Math.min(2, headerCells.length)
+  ));
 }
 
 // Converts OCR coordinates into the same header-to-row shape used by spreadsheet extraction.
 export function extractTableRowsFromTsv(tsv, replacementText = "") {
   const layout = parseTsvLayout(tsv);
-  const headerLine = layout.lines.find((line) => {
-    const cells = groupLineWords(line.words, layout.imageWidth);
-    return isWideGappedLine(line.words, layout.imageWidth) && cells.length >= 3;
-  });
+  const headerLine = findTableHeaderLine(layout);
 
   if (!headerLine) {
     return [];
@@ -392,6 +405,30 @@ export function extractTableRowsFromTsv(tsv, replacementText = "") {
       return row;
     })
     .filter((row) => Object.values(row).some(Boolean));
+}
+
+function findTableHeaderLine(layout) {
+  return layout.lines.find((line) => {
+    if (!isWideGappedLine(line.words, layout.imageWidth)) {
+      return false;
+    }
+    const cells = groupLineWords(line.words, layout.imageWidth);
+    return cells.length >= 2 && cells.filter((cell) => isKnownTableHeader(cell.text)).length >= 2;
+  });
+}
+
+function isKnownTableHeader(value) {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .replace(/[\s_：:./()-]+/g, "");
+  return tableHeaderNames.has(normalized);
+}
+
+function countAlignedCells(words, headerCells, imageWidth) {
+  const tolerance = imageWidth * 0.1;
+  return groupLineWords(words, imageWidth).filter((cell) => (
+    headerCells.some((header) => Math.abs(cell.left - header.left) <= tolerance)
+  )).length;
 }
 
 function parseTsvLayout(tsv) {

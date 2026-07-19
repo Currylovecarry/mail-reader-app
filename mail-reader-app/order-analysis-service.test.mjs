@@ -36,4 +36,27 @@ assert.deepEqual(
 );
 assert.deepEqual(spacedGnModels.quantities.map((item) => item.value), [220, 50]);
 
+const imageTextFallback = analyzeOrderContent({
+  content_blocks: [{
+    type: "image_ocr",
+    source: "product-page.jpg",
+    text: [
+      "型号 HCK.381-SST-M12-FKM-GL-P",
+      "HCK.381-SST-M12-FKM-GL-P",
+      "ALT-200",
+      "数量 1 加入购物车"
+    ].join("\n"),
+    rows: [{
+      型号: "HCK.381-SST-M12-FKM-GL-P",
+      其他: ""
+    }]
+  }]
+});
+
+assert.deepEqual(
+  imageTextFallback.product_models.map((item) => item.value),
+  ["HCK.381-SST-M12-FKM-GL-P", "ALT-200"]
+);
+assert.deepEqual(imageTextFallback.quantities, []);
+
 console.log("order-analysis-service test passed");

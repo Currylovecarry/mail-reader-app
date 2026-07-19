@@ -237,14 +237,35 @@ function extractQuantitiesFromTextBlock(block) {
 
   const confidence = getTextQuantityConfidence(block.type);
   const source = block.source || block.metadata?.filename || "content_block";
-  return findQuantityMatches(block.text).map((parsed) => ({
-    value: parsed.value,
-    unit: parsed.unit,
-    raw_text: parsed.rawText,
-    source,
-    content_block_type: block.type || "unknown",
-    confidence
-  }));
+  return findQuantityMatches(block.text)
+    .filter((parsed) => !isCommerceUiQuantity(block, parsed))
+    .map((parsed) => ({
+      value: parsed.value,
+      unit: parsed.unit,
+      raw_text: parsed.rawText,
+      source,
+      content_block_type: block.type || "unknown",
+      confidence
+    }));
+}
+
+function isCommerceUiQuantity(block, parsed) {
+  if (block?.type !== "image_ocr") {
+    return false;
+  }
+  const text = String(block.text || "");
+  const context = text
+    .slice(Math.max(0, parsed.start - 100), Math.min(text.length, parsed.end + 100))
+    .toLowerCase()
+    .replace(/[\s_：:.-]+/g, "");
+  const commerceUi = /购物车|加入购物车|立即购买|addtocart|cartquantity|quantityselector/.test(context);
+  if (!commerceUi) {
+    return false;
+  }
+
+  // Explicit procurement wording remains valid even if a quoted source also
+  // mentions a cart elsewhere in the surrounding OCR text.
+  return !/^(?:采购|订购|需要)/.test(parsed.rawText.replace(/\s+/g, ""));
 }
 
 function isQuantityColumn(columnName) {
@@ -321,7 +342,9 @@ function findQuantityMatches(text) {
       matches.push({
         value: parseNumber(parsed[1]),
         unit: normalizeUnit(parsed[2] || ""),
-        rawText
+        rawText,
+        start,
+        end
       });
     }
   });
@@ -513,9 +536,6 @@ function extractProductModels(contentBlocks) {
     if (!["body_text", "table", "spreadsheet", "pdf_text", "image_ocr"].includes(block?.type)) {
       continue;
     }
-    if (block?.type === "image_ocr" && Array.isArray(block?.rows) && block.rows.length) {
-      continue;
-    }
     extractModelsFromText(block).forEach((model) => addUniqueModel(results, seen, model));
   }
 
@@ -565,7 +585,7 @@ function extractModelsFromText(block) {
     let match;
     while ((match = pattern.exec(text))) {
       const model = normalizeModelValue(match[1]);
-      if (!model) {
+      if (!model || isLikelyTableHeaderValue(model)) {
         continue;
       }
       models.push({
@@ -591,6 +611,13 @@ function extractModelsFromText(block) {
   return models;
 }
 
+function isLikelyTableHeaderValue(value) {
+  return new Set([
+    "material", "description", "product", "productname", "name", "qty", "quantity",
+    "unit", "uom", "spec", "specification", "remarks", "remark"
+  ]).has(normalizeColumnName(value));
+}
+
 function isModelColumn(columnName) {
   const normalized = normalizeColumnName(columnName);
   return ["model", "modelno", "itemno", "sku", "partnumber", "型号", "货号", "料号", "产品型号"].includes(normalized);
@@ -607,12 +634,44 @@ function normalizeModelValue(value) {
 }
 
 function addUniqueModel(results, seen, model) {
-  const key = `${model.value}|${model.source}|${model.row_index || ""}`;
+  const key = normalizeModelDedupKey(model.value);
   if (seen.has(key)) {
     return;
   }
+
+  const relatedIndex = results.findIndex((existing) => isLowerConfidencePartialModel(existing, model));
+  if (relatedIndex >= 0) {
+    if ((Number(model.confidence) || 0) > (Number(results[relatedIndex].confidence) || 0)) {
+      seen.delete(normalizeModelDedupKey(results[relatedIndex].value));
+      results[relatedIndex] = model;
+      seen.add(key);
+    }
+    return;
+  }
+
   seen.add(key);
   results.push(model);
+}
+
+function normalizeModelDedupKey(value) {
+  return String(value || "").trim().replace(/\s+/g, "").toLowerCase();
+}
+
+function isLowerConfidencePartialModel(existing, candidate) {
+  if (existing.source !== candidate.source) {
+    return false;
+  }
+  const existingConfidence = Number(existing.confidence) || 0;
+  const candidateConfidence = Number(candidate.confidence) || 0;
+  if (Math.abs(existingConfidence - candidateConfidence) < 0.1) {
+    return false;
+  }
+  const existingKey = normalizeModelDedupKey(existing.value).replace(/[^a-z0-9]/g, "");
+  const candidateKey = normalizeModelDedupKey(candidate.value).replace(/[^a-z0-9]/g, "");
+  if (Math.min(existingKey.length, candidateKey.length) < 6) {
+    return false;
+  }
+  return existingKey.startsWith(candidateKey) || candidateKey.startsWith(existingKey);
 }
 
 function isWeakEquipmentOnlyMatch(classified) {
