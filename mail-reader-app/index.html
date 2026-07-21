@@ -1852,13 +1852,6 @@
           </div>
         </div>
 
-        <button class="compose-button" id="compose-button" type="button">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14"></path>
-          </svg>
-          <span>新邮件</span>
-        </button>
-
         <nav class="nav-section" aria-label="邮箱文件夹">
           <button class="nav-item active" type="button" data-folder="inbox">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -1875,29 +1868,29 @@
             <span class="nav-label">已标星</span>
             <span class="nav-count" id="starred-count">0</span>
           </button>
-          <button class="nav-item" type="button" data-folder="drafts">
+          <button class="nav-item" type="button" data-folder="unprocessed">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"></path>
-              <path d="m14 7 3 3"></path>
+              <circle cx="12" cy="12" r="8.5"></circle>
+              <path d="M12 7.5V12l3 2"></path>
             </svg>
-            <span class="nav-label">草稿箱</span>
-            <span class="nav-count" id="draft-count">0</span>
+            <span class="nav-label">未处理</span>
+            <span class="nav-count" id="unprocessed-count">0</span>
           </button>
-          <button class="nav-item" type="button" data-folder="sent">
+          <button class="nav-item" type="button" data-folder="processed">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m21 3-7.5 18-3.2-7.3L3 10.5 21 3Z"></path>
-              <path d="m10.3 13.7 4-4"></path>
+              <circle cx="12" cy="12" r="8.5"></circle>
+              <path d="m8.5 12 2.3 2.3 4.8-5"></path>
             </svg>
-            <span class="nav-label">已发送</span>
-            <span class="nav-count" id="sent-count">0</span>
+            <span class="nav-label">已处理</span>
+            <span class="nav-count" id="processed-count">0</span>
           </button>
-          <button class="nav-item" type="button" data-folder="deleted">
+          <button class="nav-item" type="button" data-folder="new">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"></path>
-              <path d="M10 11v5M14 11v5"></path>
+              <rect x="3.5" y="6" width="17" height="13" rx="3"></rect>
+              <path d="m5.5 9 6.5 5 6.5-5M18 3v6M15 6h6"></path>
             </svg>
-            <span class="nav-label">已删除</span>
-            <span class="nav-count" id="deleted-count">0</span>
+            <span class="nav-label">新增邮件</span>
+            <span class="nav-count" id="new-count">0</span>
           </button>
         </nav>
 
@@ -1993,6 +1986,12 @@
             <span class="reader-position" id="reader-position">选择一封邮件开始阅读</span>
           </div>
           <div class="reader-toolbar-actions">
+            <button class="icon-button" id="processed-button" type="button" aria-label="标记为已处理" title="标记为已处理">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5"></circle>
+                <path d="m8.5 12 2.3 2.3 4.8-5"></path>
+              </svg>
+            </button>
             <button class="icon-button" id="star-button" type="button" aria-label="收藏邮件" title="收藏">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"></path>
@@ -2161,9 +2160,9 @@
         source: document.getElementById("mail-source"),
         inboxCount: document.getElementById("inbox-count"),
         starredCount: document.getElementById("starred-count"),
-        draftCount: document.getElementById("draft-count"),
-        sentCount: document.getElementById("sent-count"),
-        deletedCount: document.getElementById("deleted-count"),
+        unprocessedCount: document.getElementById("unprocessed-count"),
+        processedCount: document.getElementById("processed-count"),
+        newCount: document.getElementById("new-count"),
         folderTitle: document.getElementById("folder-title"),
         search: document.getElementById("mail-search"),
         searchClear: document.getElementById("search-clear"),
@@ -2190,6 +2189,7 @@
         extractionStatus: document.getElementById("extraction-status"),
         extractionResult: document.getElementById("extraction-result"),
         refreshExtractionButton: document.getElementById("refresh-extraction-button"),
+        processedButton: document.getElementById("processed-button"),
         starButton: document.getElementById("star-button"),
         inlineStarButton: document.getElementById("inline-star-button"),
         replyButton: document.getElementById("reply-button"),
@@ -2216,9 +2216,9 @@
       const folderTitles = {
         inbox: "收件箱",
         starred: "已标星",
-        drafts: "草稿箱",
-        sent: "已发送",
-        deleted: "已删除"
+        unprocessed: "未处理邮件",
+        processed: "已处理邮件",
+        new: "新增邮件"
       };
 
       const labelTitles = {
@@ -2243,6 +2243,9 @@
       const extractionCache = new Map();
       const starredMailIds = new Set();
       const deletedMailIds = new Set();
+      const processedMailIds = new Set(readStoredIds("smart-mail-processed"));
+      const newMailIds = new Set(readStoredIds("smart-mail-new"));
+      const knownMailIds = new Set(readStoredIds("smart-mail-known"));
       const sentMails = [];
       let mailRecords = [];
       let activeMailId = "";
@@ -2251,6 +2254,42 @@
       let currentExtractionRequest = 0;
       let toastTimer = 0;
       let bodyExpanded = false;
+
+      function readStoredIds(key) {
+        try {
+          const value = JSON.parse(window.localStorage.getItem(key) || "[]");
+          return Array.isArray(value) ? value : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function persistMailStatus() {
+        try {
+          window.localStorage.setItem("smart-mail-processed", JSON.stringify([...processedMailIds]));
+          window.localStorage.setItem("smart-mail-new", JSON.stringify([...newMailIds]));
+          window.localStorage.setItem("smart-mail-known", JSON.stringify([...knownMailIds]));
+        } catch {
+          // Private browsing or storage restrictions should not block mail handling.
+        }
+      }
+
+      function reconcileMailStatus() {
+        const currentIds = new Set(mailRecords.map((mail) => mail.id));
+        if (knownMailIds.size) {
+          currentIds.forEach((id) => {
+            if (!knownMailIds.has(id)) newMailIds.add(id);
+          });
+        }
+        [processedMailIds, newMailIds].forEach((set) => {
+          [...set].forEach((id) => {
+            if (!currentIds.has(id)) set.delete(id);
+          });
+        });
+        knownMailIds.clear();
+        currentIds.forEach((id) => knownMailIds.add(id));
+        persistMailStatus();
+      }
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -2374,12 +2413,12 @@
         let records = mailRecords;
         if (activeFolder === "starred") {
           records = mailRecords.filter((mail) => starredMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
-        } else if (activeFolder === "deleted") {
-          records = mailRecords.filter((mail) => deletedMailIds.has(mail.id));
-        } else if (activeFolder === "sent") {
-          records = sentMails;
-        } else if (activeFolder === "drafts") {
-          records = [];
+        } else if (activeFolder === "unprocessed") {
+          records = mailRecords.filter((mail) => !processedMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
+        } else if (activeFolder === "processed") {
+          records = mailRecords.filter((mail) => processedMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
+        } else if (activeFolder === "new") {
+          records = mailRecords.filter((mail) => newMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
         } else {
           records = mailRecords.filter((mail) => !deletedMailIds.has(mail.id));
         }
@@ -2396,11 +2435,12 @@
       }
 
       function updateNavigationCounts() {
-        elements.inboxCount.textContent = mailRecords.filter((mail) => !deletedMailIds.has(mail.id)).length;
+        const availableMails = mailRecords.filter((mail) => !deletedMailIds.has(mail.id));
+        elements.inboxCount.textContent = availableMails.length;
         elements.starredCount.textContent = starredMailIds.size;
-        elements.deletedCount.textContent = deletedMailIds.size;
-        elements.sentCount.textContent = sentMails.length;
-        elements.draftCount.textContent = "0";
+        elements.unprocessedCount.textContent = availableMails.filter((mail) => !processedMailIds.has(mail.id)).length;
+        elements.processedCount.textContent = availableMails.filter((mail) => processedMailIds.has(mail.id)).length;
+        elements.newCount.textContent = availableMails.filter((mail) => newMailIds.has(mail.id)).length;
       }
 
       function renderList() {
@@ -2464,7 +2504,7 @@
         const hasMail = Boolean(mail);
         elements.readerEmpty.hidden = hasMail;
         elements.readerContent.hidden = !hasMail;
-        [elements.starButton, elements.inlineStarButton, elements.replyButton, elements.forwardButton, elements.deleteButton, elements.refreshExtractionButton]
+        [elements.processedButton, elements.starButton, elements.inlineStarButton, elements.replyButton, elements.forwardButton, elements.deleteButton, elements.refreshExtractionButton]
           .forEach((button) => { button.disabled = !hasMail; });
 
         if (!mail) {
@@ -2492,6 +2532,7 @@
 
         renderBody(mail);
         renderAttachments(mail);
+        updateProcessedState();
         updateStarState();
       }
 
@@ -2861,6 +2902,36 @@
         elements.inlineStarButton.setAttribute("aria-label", isStarred ? "取消收藏" : "收藏邮件");
       }
 
+      function updateProcessedState() {
+        const isProcessed = processedMailIds.has(activeMailId);
+        const label = isProcessed ? "标记为未处理" : "标记为已处理";
+        elements.processedButton.classList.toggle("active", isProcessed);
+        elements.processedButton.setAttribute("aria-label", label);
+        elements.processedButton.title = label;
+      }
+
+      function toggleProcessed() {
+        if (!activeMailId) return;
+        const wasProcessed = processedMailIds.has(activeMailId);
+        if (wasProcessed) {
+          processedMailIds.delete(activeMailId);
+          showToast("已标记为未处理");
+        } else {
+          processedMailIds.add(activeMailId);
+          newMailIds.delete(activeMailId);
+          showToast("已标记为已处理", "success");
+        }
+        persistMailStatus();
+        updateProcessedState();
+
+        if ((activeFolder === "unprocessed" && !wasProcessed) || (activeFolder === "processed" && wasProcessed) || (activeFolder === "new" && !wasProcessed)) {
+          const next = getVisibleMails().find((mail) => mail.id !== activeMailId);
+          setActiveMail(next?.id || "");
+          return;
+        }
+        renderList();
+      }
+
       function toggleStar() {
         if (!activeMailId) return;
         if (starredMailIds.has(activeMailId)) {
@@ -2979,6 +3050,7 @@
         const payload = window.__IMPORTED_MAIL_DATA__;
         if (Array.isArray(payload?.mails) && payload.mails.length) {
           mailRecords = payload.mails;
+          reconcileMailStatus();
           elements.source.textContent = "本地邮件";
           selectFolder("inbox");
           return true;
@@ -2993,6 +3065,7 @@
           if (!response.ok) throw new Error("服务暂未启动");
           const payload = await response.json();
           mailRecords = Array.isArray(payload.mails) ? payload.mails : [];
+          reconcileMailStatus();
           elements.source.textContent = mailRecords.length ? "已同步" : "等待同步";
           selectFolder("inbox");
           if (!mailRecords.length) showToast("收件箱暂无邮件，可以点击同步按钮更新");
@@ -3021,6 +3094,7 @@
           const payload = await response.json();
           if (!response.ok) throw new Error(payload.error || "同步失败");
           mailRecords = payload.mails || [];
+          reconcileMailStatus();
           extractionCache.clear();
           elements.source.textContent = "刚刚同步";
           selectFolder("inbox");
@@ -3052,7 +3126,8 @@
         renderList();
       });
       elements.importButton.addEventListener("click", importInbox);
-      elements.composeButton.addEventListener("click", () => openCompose("new"));
+      elements.composeButton?.addEventListener("click", () => openCompose("new"));
+      elements.processedButton.addEventListener("click", toggleProcessed);
       elements.replyButton.addEventListener("click", () => openCompose("reply"));
       elements.forwardButton.addEventListener("click", () => openCompose("forward"));
       elements.starButton.addEventListener("click", toggleStar);
