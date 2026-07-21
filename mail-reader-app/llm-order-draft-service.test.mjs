@@ -167,4 +167,155 @@ assert.equal(result.order_draft.requirements.contact_person, "李敏");
 assert.ok(result.order_draft.missing_fields.includes("delivery_date"));
 assert.ok(result.order_draft.warnings.includes("LLM quantity differs from structured quantity"));
 
+const stringClassificationResult = await generateOrderDraft({
+  email_id: "mail_string_classification",
+  subject: "设备故障投诉",
+  from: "customer@example.com",
+  content_blocks: [
+    {
+      type: "body_text",
+      source: "email_body",
+      text: "客户投诉：设备故障且不能用，请尽快处理。",
+      confidence: 1,
+      metadata: {}
+    }
+  ]
+}, {
+  invokeLlm: async () => JSON.stringify({
+    status: "success",
+    order_draft: {
+      email_id: "mail_string_classification",
+      business_type: "BT4",
+      product_type: "PT4",
+      products: [
+        {
+          line_no: 1,
+          product_model: "MAC-100",
+          product_name: "自动化设备",
+          quantity: 1,
+          unit: "台",
+          specifications: "",
+          remarks: "故障",
+          confidence: 0.86,
+          evidence: {
+            source: "email_body",
+            content_block_type: "body_text",
+            block_index: 0,
+            row_index: null,
+            raw_text: "设备故障且不能用"
+          }
+        }
+      ],
+      requirements: {},
+      warnings: [],
+      evidence: {}
+    }
+  })
+});
+
+assert.equal(stringClassificationResult.status, "success");
+assert.equal(stringClassificationResult.order_draft.business_type.code, "BT4");
+assert.equal(stringClassificationResult.order_draft.business_type.label, "投诉反馈");
+assert.equal(stringClassificationResult.order_draft.product_type.code, "PT4");
+
+const appleReceiptContent = {
+  email_id: "mail_apple_repair_receipt",
+  subject: "Apple 维修收据",
+  from: "apple@example.com",
+  content_blocks: [
+    {
+      type: "pdf_text",
+      source: "Sale_Email_Receipt_20260720R6881186609_zh_CN.pdf",
+      text: [
+        "Apple 维修收据",
+        "维修 ID: R6881186609",
+        "维修配件 IPAD PRO 11,3G,WIFI,128GB, SILVER-CH ¥0.00",
+        "部件号: CE661-20074",
+        "IPAD 维修费 ¥948.00",
+        "部件号: SHXG2Z/A",
+        "付款方式：支付宝",
+        "支付金额：¥948.00"
+      ].join("\n"),
+      confidence: 0.98,
+      metadata: { filename: "Sale_Email_Receipt_20260720R6881186609_zh_CN.pdf" }
+    }
+  ]
+};
+
+const appleReceiptResult = await generateOrderDraft(appleReceiptContent, {
+  invokeLlm: async () => JSON.stringify({
+    status: "success",
+    order_draft: {
+      email_id: "mail_apple_repair_receipt",
+      business_type: "BT6",
+      product_type: { code: "PT3", label: "备件", confidence: 0.9, reason: "包含维修配件" },
+      products: [],
+      requirements: {},
+      warnings: [],
+      evidence: {}
+    }
+  })
+});
+
+assert.equal(appleReceiptResult.status, "success");
+assert.equal(appleReceiptResult.order_draft.business_type.code, "BT6");
+assert.equal(appleReceiptResult.order_draft.business_type.label, "售后凭证");
+assert.equal(appleReceiptResult.order_draft.products.length, 2);
+assert.deepEqual(
+  appleReceiptResult.order_draft.products.map((product) => product.product_model),
+  ["CE661-20074", "SHXG2Z/A"]
+);
+assert.equal(
+  appleReceiptResult.order_draft.products[0].product_name,
+  "维修配件 IPAD PRO 11,3G,WIFI,128GB, SILVER-CH"
+);
+assert.equal(appleReceiptResult.order_draft.products[1].product_name, "IPAD 维修费");
+
+const appleReceiptFallbackResult = await generateOrderDraft(appleReceiptContent, {
+  invokeLlm: async () => "not valid json"
+});
+
+assert.equal(appleReceiptFallbackResult.status, "partial_success");
+assert.equal(appleReceiptFallbackResult.order_draft.business_type.code, "BT6");
+assert.deepEqual(
+  appleReceiptFallbackResult.order_draft.products.map((product) => product.product_model),
+  ["CE661-20074", "SHXG2Z/A"]
+);
+
+const partialResult = await generateOrderDraft({
+  email_id: "mail_partial_success",
+  subject: "产品资料",
+  from: "customer@example.com",
+  content_blocks: [
+    {
+      type: "spreadsheet",
+      source: "products.xlsx#Sheet1",
+      text: "",
+      rows: [{ "产品型号": "AX-100", "产品名称": "电机组件" }],
+      confidence: 0.95,
+      metadata: {}
+    }
+  ]
+}, {
+  invokeLlm: async () => JSON.stringify({
+    status: "success",
+    order_draft: {
+      email_id: "mail_partial_success",
+      business_type: "not-a-valid-business-type",
+      product_type: "PT3",
+      products: [],
+      requirements: {},
+      warnings: [],
+      evidence: {}
+    }
+  })
+});
+
+assert.equal(partialResult.status, "partial_success");
+assert.equal(partialResult.order_draft.business_type.code, "unknown");
+assert.equal(partialResult.order_draft.products[0].product_model, "AX-100");
+assert.equal(partialResult.error, "");
+assert.ok(partialResult.partial_reasons.includes("业务类型待人工确认"));
+assert.ok(partialResult.plain_summary.includes("业务类型还需要进一步确认"));
+
 console.log("llm-order-draft-service test passed");

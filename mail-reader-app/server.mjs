@@ -199,10 +199,11 @@ const server = createServer(async (request, response) => {
 
       const extracted = await extractEmailContent(mail);
       const payload = await generateOrderDraft(extracted);
-      if (payload.status === "success" && payload.order_draft) {
+      if (["success", "partial_success"].includes(payload.status) && payload.order_draft) {
         const record = await orderRecognitionRepository.saveOrderDraft(payload.order_draft);
         payload.persistence = {
           status: "saved",
+          result_status: payload.status,
           recognition_order_id: record.id
         };
       }

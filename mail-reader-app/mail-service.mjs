@@ -993,6 +993,14 @@ function getDedupKey(mail) {
   return `meta:${normalizeDedupPart(mail.subject)}|${normalizeDedupPart(mail.sender)}|${normalizeDedupPart(mail.time)}`;
 }
 
+export function countRetainedAddedMails(retainedMails, previousKeys) {
+  const knownKeys = previousKeys instanceof Set ? previousKeys : new Set(previousKeys || []);
+  return retainedMails.reduce(
+    (count, mail) => count + (knownKeys.has(getDedupKey(mail)) ? 0 : 1),
+    0
+  );
+}
+
 function normalizeDedupPart(value) {
   return String(value || "")
     .trim()
@@ -1038,6 +1046,7 @@ async function syncImapInbox(config, options = {}) {
   const stored = await readStoredMails();
   let previousMails = (Array.isArray(stored.mails) ? stored.mails : []).filter((mail) => isMailWithinDays(mail, syncDays));
   const previousByKey = new Map(previousMails.map((mail) => [getDedupKey(mail), mail]).filter(([key]) => key));
+  const previousKeysBeforeSync = new Set(previousByKey.keys());
   const processedKeys = new Set([
     ...(Array.isArray(stored.syncState?.processedKeys) ? stored.syncState.processedKeys : []),
     ...previousMails.map(getDedupKey).filter(Boolean)
@@ -1108,6 +1117,8 @@ async function syncImapInbox(config, options = {}) {
   const mails = [...newMails, ...previousMails]
     .sort((left, right) => getMailTime(right) - getMailTime(left))
     .slice(0, syncLimit);
+  const detected = newMails.length - replaced;
+  const added = countRetainedAddedMails(mails, previousKeysBeforeSync);
   const payload = {
     mode: "imap_smtp",
     alias: config.imap.email,
@@ -1120,7 +1131,8 @@ async function syncImapInbox(config, options = {}) {
     },
     syncLog: {
       scanned: fetched.length,
-      added: newMails.length - replaced,
+      detected,
+      added,
       replaced,
       skipped,
       skippedOld
@@ -1128,7 +1140,7 @@ async function syncImapInbox(config, options = {}) {
   };
 
   await writeStoredMails(payload);
-  console.log(`IMAP sync complete: scanned=${fetched.length}, added=${newMails.length - replaced}, replaced=${replaced}, skipped=${skipped}, skippedOld=${skippedOld}`);
+  console.log(`IMAP sync complete: scanned=${fetched.length}, detected=${detected}, retained=${mails.length}, added=${added}, replaced=${replaced}, skipped=${skipped}, skippedOld=${skippedOld}`);
   return payload;
 }
 

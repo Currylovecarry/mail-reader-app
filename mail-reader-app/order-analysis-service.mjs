@@ -47,6 +47,12 @@ const businessTypeRules = [
     label: "合作咨询",
     keywords: ["partnership", "cooperation", "distributor", "dealer", "agency", "agent", "代理", "经销", "合作", "商务合作"],
     reason: "邮件中出现代理、经销或商务合作相关表达"
+  },
+  {
+    code: "BT6",
+    label: "售后凭证",
+    keywords: ["service receipt", "repair receipt", "payment receipt", "receipt", "invoice", "售后凭证", "维修收据", "收据", "维修 id", "维修配件", "维修费", "付款方式", "支付金额", "发票"],
+    reason: "邮件中出现收据、维修项目或支付凭证相关表达"
   }
 ];
 
@@ -578,7 +584,7 @@ function extractModelsFromText(block) {
   const models = [];
   const contextPatterns = [
     /\b(?:model(?:\s*no\.?)?|item\s*no\.?|part\s*number|sku)\s*[:：#-]?\s*([A-Z0-9][A-Z0-9._/-]{1,40})/gi,
-    /(?:型号|货号|料号|产品型号)\s*[:：#-]?\s*([A-Z0-9][A-Z0-9._/-]{1,40})/gi
+    /(?:型号|货号|料号|部件号|产品型号)\s*[:：#-]?\s*([A-Z0-9][A-Z0-9._/-]{1,40})/gi
   ];
 
   contextPatterns.forEach((pattern) => {
@@ -620,7 +626,7 @@ function isLikelyTableHeaderValue(value) {
 
 function isModelColumn(columnName) {
   const normalized = normalizeColumnName(columnName);
-  return ["model", "modelno", "itemno", "sku", "partnumber", "型号", "货号", "料号", "产品型号"].includes(normalized);
+  return ["model", "modelno", "itemno", "sku", "partnumber", "型号", "货号", "料号", "部件号", "产品型号"].includes(normalized);
 }
 
 function normalizeModelValue(value) {

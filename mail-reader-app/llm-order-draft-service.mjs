@@ -6,7 +6,9 @@ const BUSINESS_TYPE_LABELS = {
   BT2: "追单邮件",
   BT3: "样品申请",
   BT4: "投诉反馈",
-  BT5: "合作咨询"
+  BT5: "合作咨询",
+  BT6: "售后凭证",
+  unknown: "待确认"
 };
 
 const PRODUCT_TYPE_LABELS = {
@@ -47,13 +49,46 @@ export async function generateOrderDraft(extractedContent, options = {}) {
     rawLlmResponse = await invokeLlm(prompt, options);
     const parsed = safeParseJson(rawLlmResponse);
     if (!parsed.ok) {
+      const fallbackDraft = normalizeDraft({}, extractedContent, structuredHints);
+      if (hasRecognizedProducts(fallbackDraft)) {
+        return createPartialSuccessPayload(
+          extractedContent,
+          rawLlmResponse,
+          [parsed.error],
+          fallbackDraft
+        );
+      }
       return createParseFailedPayload(extractedContent, rawLlmResponse, [parsed.error], options);
     }
 
     const normalized = normalizeDraft(parsed.value, extractedContent, structuredHints);
     const validationErrors = validateOrderDraft(normalized);
     if (validationErrors.length) {
+      if (hasRecognizedProducts(normalized)) {
+        return createPartialSuccessPayload(
+          extractedContent,
+          rawLlmResponse,
+          validationErrors,
+          normalized
+        );
+      }
       return createParseFailedPayload(extractedContent, rawLlmResponse, validationErrors, options, normalized);
+    }
+
+    const partialReasons = [];
+    if (normalized.business_type?.code === "unknown") {
+      partialReasons.push("业务类型待人工确认");
+    }
+    if (normalized.product_type?.code === "unknown") {
+      partialReasons.push("产品类别待人工确认");
+    }
+    if (partialReasons.length) {
+      return createPartialSuccessPayload(
+        extractedContent,
+        rawLlmResponse,
+        partialReasons,
+        normalized
+      );
     }
 
     return {
@@ -69,6 +104,15 @@ export async function generateOrderDraft(extractedContent, options = {}) {
       error: ""
     };
   } catch (error) {
+    const fallbackDraft = normalizeDraft({}, extractedContent, structuredHints);
+    if (hasRecognizedProducts(fallbackDraft)) {
+      return createPartialSuccessPayload(
+        extractedContent,
+        rawLlmResponse,
+        [error?.message || "LLM 调用失败"],
+        fallbackDraft
+      );
+    }
     return createParseFailedPayload(
       extractedContent,
       rawLlmResponse,
@@ -144,45 +188,99 @@ function extractStructuredProducts(contentBlocks) {
   const products = [];
 
   (Array.isArray(contentBlocks) ? contentBlocks : []).forEach((block, blockIndex) => {
-    if (!["spreadsheet", "table", "image_ocr"].includes(block?.type) || !Array.isArray(block?.rows)) {
+    if (["spreadsheet", "table", "image_ocr"].includes(block?.type) && Array.isArray(block?.rows)) {
+      block.rows.forEach((row, rowIndex) => {
+        if (!row || typeof row !== "object") {
+          return;
+        }
+
+        const lineNo = pickRowValue(row, ["序号", "line_no", "line", "item", "itemno", "序列"]);
+        const productModel = pickRowValue(row, ["产品型号", "型号", "model", "modelno", "itemno", "partnumber", "部件号", "货号", "料号"]);
+        const productName = pickRowValue(row, ["产品名称", "名称", "品名", "productname", "name", "description", "itemname"]);
+        const quantityText = pickRowValue(row, ["数量", "订购数量", "采购数量", "需求数量", "qty", "quantity", "orderqty", "orderquantity", "requiredquantity"]);
+        const unit = pickRowValue(row, ["单位", "unit", "uom"]);
+        const specifications = pickRowValue(row, ["规格", "spec", "specification", "specifications"]);
+        const remarks = pickRowValue(row, ["备注", "remark", "remarks", "note", "notes"]);
+        const rawText = buildRowRawText(row);
+
+        if (!productModel && !productName && !quantityText) {
+          return;
+        }
+
+        products.push({
+          line_no: toInteger(lineNo) || rowIndex + 1,
+          product_model: productModel,
+          product_name: productName,
+          quantity: parseNullableNumber(quantityText),
+          unit,
+          specifications,
+          remarks,
+          confidence: 0.95,
+          evidence: {
+            source: block.source || "",
+            content_block_type: block.type || "",
+            block_index: blockIndex,
+            row_index: rowIndex + 1,
+            raw_text: rawText
+          }
+        });
+      });
+    }
+
+    if (["body_text", "pdf_text", "image_ocr"].includes(block?.type) && block?.text) {
+      products.push(...extractLabeledTextProducts(block, blockIndex, products.length));
+    }
+  });
+
+  const seen = new Set();
+  return products.filter((product) => {
+    const key = `${normalizeToken(product.product_model)}|${normalizeToken(product.product_name)}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function extractLabeledTextProducts(block, blockIndex, lineOffset = 0) {
+  const lines = String(block.text || "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const products = [];
+  const modelPattern = /^(?:部件号|part\s*(?:number|no\.?)|item\s*(?:number|no\.?)|料号|货号|产品型号|型号)\s*[:：#-]?\s*([A-Z0-9][A-Z0-9._/-]{1,60})\s*$/i;
+
+  lines.forEach((line, lineIndex) => {
+    const modelMatch = line.match(modelPattern);
+    if (!modelMatch) {
       return;
     }
 
-    block.rows.forEach((row, rowIndex) => {
-      if (!row || typeof row !== "object") {
-        return;
+    const previousLine = lines[lineIndex - 1] || "";
+    const productName = previousLine
+      .replace(/\s*[¥￥$]\s*[\d,.]+\s*$/u, "")
+      .trim();
+    if (!productName || /^(?:总计|小计|付款方式|应付|合计)$/i.test(productName)) {
+      return;
+    }
+
+    products.push({
+      line_no: lineOffset + products.length + 1,
+      product_model: modelMatch[1].trim(),
+      product_name: productName,
+      quantity: null,
+      unit: "",
+      specifications: "",
+      remarks: "",
+      confidence: block.type === "pdf_text" ? 0.9 : 0.82,
+      evidence: {
+        source: block.source || block.metadata?.filename || "",
+        content_block_type: block.type || "",
+        block_index: blockIndex,
+        row_index: null,
+        raw_text: `${previousLine}\n${line}`.trim()
       }
-
-      const lineNo = pickRowValue(row, ["序号", "line_no", "line", "item", "itemno", "序列"]);
-      const productModel = pickRowValue(row, ["产品型号", "型号", "model", "modelno", "itemno", "partnumber", "货号", "料号"]);
-      const productName = pickRowValue(row, ["产品名称", "名称", "品名", "productname", "name", "description", "itemname"]);
-      const quantityText = pickRowValue(row, ["数量", "订购数量", "采购数量", "需求数量", "qty", "quantity", "orderqty", "orderquantity", "requiredquantity"]);
-      const unit = pickRowValue(row, ["单位", "unit", "uom"]);
-      const specifications = pickRowValue(row, ["规格", "spec", "specification", "specifications"]);
-      const remarks = pickRowValue(row, ["备注", "remark", "remarks", "note", "notes"]);
-      const rawText = buildRowRawText(row);
-
-      if (!productModel && !productName && !quantityText) {
-        return;
-      }
-
-      products.push({
-        line_no: toInteger(lineNo) || rowIndex + 1,
-        product_model: productModel,
-        product_name: productName,
-        quantity: parseNullableNumber(quantityText),
-        unit,
-        specifications,
-        remarks,
-        confidence: 0.95,
-        evidence: {
-          source: block.source || "",
-          content_block_type: block.type || "",
-          block_index: blockIndex,
-          row_index: rowIndex + 1,
-          raw_text: rawText
-        }
-      });
     });
   });
 
@@ -413,12 +511,31 @@ function mergeTopLevelEvidence(llmEvidence, structuredRequirementEvidence) {
 }
 
 function normalizeClassification(value, labels, fallback = {}) {
-  const code = String(value?.code || fallback?.code || "").trim();
+  const valueIsString = typeof value === "string";
+  const requestedCode = String(valueIsString ? value : value?.code || "").trim();
+  const fallbackCode = String(typeof fallback === "string" ? fallback : fallback?.code || "").trim();
+  const fallbackConfidence = clampConfidence(fallback?.confidence, 0);
+  const code = labels[requestedCode]
+    ? requestedCode
+    : labels[fallbackCode]
+      ? fallbackCode
+      : "";
+  const classificationSource = code === fallbackCode && code !== requestedCode ? fallback : value;
+  const stringConfidence = valueIsString && code === requestedCode ? Math.max(fallbackCode === code ? fallbackConfidence : 0, 0.6) : 0;
+  const stringReason = valueIsString && code === requestedCode
+    ? fallbackCode === code && fallback?.reason
+      ? fallback.reason
+      : `LLM 返回分类代码 ${code}`
+    : "";
   return {
     code: labels[code] ? code : "",
-    label: labels[code] || String(value?.label || fallback?.label || "").trim(),
-    confidence: clampConfidence(value?.confidence, clampConfidence(fallback?.confidence, 0)),
-    reason: String(value?.reason || fallback?.reason || "").trim()
+    label: labels[code] || String(classificationSource?.label || fallback?.label || "").trim(),
+    confidence: stringConfidence || clampConfidence(classificationSource?.confidence, fallbackConfidence),
+    reason: String(
+      classificationSource?.reason
+      || stringReason
+      || fallback?.reason
+    ).trim()
   };
 }
 
@@ -550,6 +667,36 @@ function createParseFailedPayload(extractedContent, rawLlmResponse, validationEr
   };
 }
 
+function createPartialSuccessPayload(extractedContent, rawLlmResponse, partialReasons, partialDraft) {
+  const reasons = normalizeStringArray(partialReasons);
+  const orderDraft = {
+    ...partialDraft,
+    warnings: [...new Set([
+      ...normalizeStringArray(partialDraft?.warnings),
+      ...reasons.map((reason) => `部分识别：${reason}`)
+    ])]
+  };
+  return {
+    status: "partial_success",
+    email_id: extractedContent?.email_id || "",
+    plain_summary: buildPlainSummary(orderDraft),
+    provider: "openai_compatible",
+    model: getLlmConfig().model,
+    extracted_block_count: Array.isArray(extractedContent?.content_blocks) ? extractedContent.content_blocks.length : 0,
+    order_draft: orderDraft,
+    raw_llm_response: rawLlmResponse,
+    validation_errors: reasons,
+    partial_reasons: reasons,
+    error: ""
+  };
+}
+
+function hasRecognizedProducts(orderDraft) {
+  return Array.isArray(orderDraft?.products) && orderDraft.products.some((product) =>
+    String(product?.product_model || product?.product_name || "").trim()
+  );
+}
+
 function buildPlainSummary(orderDraft) {
   if (!orderDraft || typeof orderDraft !== "object") {
     return "";
@@ -567,7 +714,7 @@ function buildPlainSummary(orderDraft) {
 
   const lines = [];
 
-  if (businessType) {
+  if (businessType && orderDraft.business_type?.code !== "unknown") {
     lines.push(`这是一封${businessType}邮件。`);
   } else {
     lines.push("这封邮件的业务类型还需要进一步确认。");

@@ -32,8 +32,10 @@ export function buildOrderDraftPrompt(extractedContent, structuredHints = {}) {
     ].join(" "),
     user: [
       "请基于下面的数据识别并输出 order_draft JSON。",
-      "business_type 只能是 BT1-BT5 之一：BT1 初次询盘，BT2 追单邮件，BT3 样品申请，BT4 投诉反馈，BT5 合作咨询。",
+      "business_type.code 只能是 BT1-BT6 或 unknown：BT1 初次询盘，BT2 追单邮件，BT3 样品申请，BT4 投诉反馈，BT5 合作咨询，BT6 售后凭证，unknown 待确认。",
       "product_type 只能是 PT1-PT4 之一：PT1 标准品，PT2 定制品，PT3 备件，PT4 整机设备。",
+      "business_type 必须输出对象：{ code, label, confidence, reason }，不要只输出代码字符串。",
+      "product_type 必须输出对象：{ code, label, confidence, reason }，不要只输出代码字符串。",
       "你需要自动识别 business_type、product_type、products、requirements、missing_fields、warnings、evidence。",
       "requirements 至少包括 delivery_terms、delivery_date、destination、payment_terms、contact_person、phone、company、project_name。",
       "如果 table/spreadsheet rows 中已经有明确 quantity、unit、product_model、product_name，请优先使用这些结构化值。",

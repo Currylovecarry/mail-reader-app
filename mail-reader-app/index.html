@@ -124,35 +124,9 @@
       .brand {
         display: flex;
         align-items: center;
-        gap: 11px;
         min-height: 44px;
         padding: 0 8px;
         margin-bottom: 24px;
-      }
-
-      .brand-mark {
-        position: relative;
-        display: grid;
-        place-items: center;
-        width: 38px;
-        height: 38px;
-        flex: 0 0 38px;
-        color: #ffffff;
-        background: var(--accent);
-        border-radius: 12px;
-        box-shadow: 0 3px 7px rgba(47, 181, 169, 0.24);
-      }
-
-      .brand-mark::after {
-        content: "";
-        position: absolute;
-        top: 7px;
-        right: 7px;
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #ffffff;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
       }
 
       .brand-copy {
@@ -422,6 +396,32 @@
         cursor: wait;
         opacity: 0.55;
         transform: none;
+      }
+
+      .sync-button .icon {
+        width: 19px;
+        height: 19px;
+        transform-origin: center;
+      }
+
+      .sync-button:hover {
+        color: var(--accent-strong);
+        background: var(--accent-soft);
+        border-color: transparent;
+      }
+
+      .sync-button:active:not(:disabled) {
+        transform: scale(0.96);
+      }
+
+      .sync-button:disabled .icon {
+        animation: sync-rotate 900ms linear infinite;
+      }
+
+      @keyframes sync-rotate {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .mobile-menu-button,
@@ -1018,21 +1018,65 @@
         align-items: center;
         gap: 6px;
         margin-top: 7px;
-        color: var(--success);
+        color: var(--muted);
         font-size: 12px;
         font-weight: 650;
       }
 
       .extraction-status::before {
-        content: "✓";
+        content: "i";
         display: grid;
         place-items: center;
         width: 17px;
         height: 17px;
         border-radius: 50%;
+        color: var(--text-soft);
+        background: var(--surface-soft);
+        font-size: 10px;
+      }
+
+      .extraction-status[data-state="pending"]::before {
+        content: "";
+        border: 2px solid var(--line-strong);
+        border-top-color: var(--accent-strong);
+        background: transparent;
+        animation: extraction-status-spin 800ms linear infinite;
+      }
+
+      .extraction-status[data-state="success"] {
+        color: var(--success);
+      }
+
+      .extraction-status[data-state="success"]::before {
+        content: "✓";
         color: #ffffff;
         background: var(--success);
-        font-size: 10px;
+      }
+
+      .extraction-status[data-state="warning"] {
+        color: var(--warning);
+      }
+
+      .extraction-status[data-state="warning"]::before {
+        content: "!";
+        color: #ffffff;
+        background: var(--warning);
+      }
+
+      .extraction-status[data-state="error"] {
+        color: var(--danger);
+      }
+
+      .extraction-status[data-state="error"]::before {
+        content: "×";
+        color: #ffffff;
+        background: var(--danger);
+      }
+
+      @keyframes extraction-status-spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .secondary-button,
@@ -1515,6 +1559,10 @@
         background: #9f353b;
       }
 
+      .toast.warning {
+        background: #82570f;
+      }
+
       .toast .icon {
         width: 18px;
         height: 18px;
@@ -1544,7 +1592,7 @@
         }
 
         .brand {
-          padding: 0;
+          display: none;
         }
 
         .brand-copy,
@@ -1612,6 +1660,7 @@
         }
 
         .brand {
+          display: flex;
           padding: 0 8px;
         }
 
@@ -1797,12 +1846,6 @@
     <main class="app-shell">
       <aside class="navigation" aria-label="邮件导航">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <svg class="icon" viewBox="0 0 24 24">
-              <rect x="3.5" y="5" width="17" height="14" rx="3"></rect>
-              <path d="m5.5 8 6.5 5 6.5-5"></path>
-            </svg>
-          </div>
           <div class="brand-copy">
             <div class="brand-title">Smart Mail</div>
             <div class="brand-subtitle">智能邮件助手</div>
@@ -1915,11 +1958,10 @@
               </div>
             </div>
             <div class="header-actions">
-              <button class="icon-button" id="import-button" type="button" aria-label="同步收件箱" title="同步收件箱">
+              <button class="icon-button sync-button" id="import-button" type="button" aria-label="同步收件箱" title="同步收件箱">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20 7v5h-5"></path>
-                  <path d="M4 17v-5h5"></path>
-                  <path d="M6.1 9a7 7 0 0 1 11.4-2.4L20 9M4 15l2.5 2.4A7 7 0 0 0 17.9 15"></path>
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
                 </svg>
               </button>
             </div>
@@ -2030,15 +2072,14 @@
               <div class="extraction-header">
                 <div class="extraction-heading">
                   <h2>邮件提取结果</h2>
-                  <div class="extraction-status" id="extraction-status">已完成智能提取</div>
+                  <div class="extraction-status" id="extraction-status" data-state="base">基础规则提取</div>
                 </div>
-                <button class="secondary-button" id="refresh-extraction-button" type="button">
+                <button class="secondary-button" id="refresh-extraction-button" type="button" aria-label="自动识别型号" title="使用 LLM 识别邮件中的产品型号">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M20 7v5h-5"></path>
-                    <path d="M4 17v-5h5"></path>
-                    <path d="M6.1 9a7 7 0 0 1 11.4-2.4L20 9M4 15l2.5 2.4A7 7 0 0 0 17.9 15"></path>
+                    <path d="m12 3 1.4 4.1 4.1 1.4-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4Z"></path>
+                    <path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8Z"></path>
                   </svg>
-                  <span class="button-label">重新提取</span>
+                  <span class="button-label">自动识别型号</span>
                 </button>
               </div>
               <div id="extraction-result"></div>
@@ -2499,12 +2540,24 @@
         }).join("");
       }
 
-      function renderExtractionSkeleton() {
+      function setExtractionStatus(state, text) {
+        elements.extractionStatus.dataset.state = state;
+        elements.extractionStatus.textContent = text;
+        elements.extractionCard.setAttribute("aria-busy", state === "pending" ? "true" : "false");
+      }
+
+      function setExtractionAction(label) {
+        elements.refreshExtractionButton.querySelector(".button-label").textContent = label;
+        elements.refreshExtractionButton.setAttribute("aria-label", label);
+      }
+
+      function renderExtractionSkeleton(mode = "base") {
         elements.extractionCard.classList.remove("is-ready");
-        elements.extractionStatus.textContent = "正在提取重要信息";
-        elements.extractionStatus.style.color = "var(--muted)";
+        const isLlm = mode === "llm";
+        setExtractionStatus("pending", isLlm ? "LLM 正在识别型号" : "正在进行基础规则提取");
+        setExtractionAction(isLlm ? "型号识别中" : "自动识别型号");
         elements.extractionResult.innerHTML = `
-          <div class="skeleton-list" aria-label="正在提取邮件信息">
+          <div class="skeleton-list" aria-label="${isLlm ? "LLM 正在识别型号" : "正在进行基础规则提取"}">
             ${Array.from({ length: 6 }, () => '<div class="skeleton-item"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>').join("")}
           </div>`;
       }
@@ -2593,7 +2646,7 @@
           </div>`;
       }
 
-      function renderAnalyzedResult(mail, payload) {
+      function renderAnalyzedResult(mail, payload, options = {}) {
         const models = (payload.product_models || []).slice(0, 10);
         const quantities = (payload.quantities || []).slice(0, 10);
         const itemCount = Math.max(models.length, quantities.length);
@@ -2615,11 +2668,25 @@
         if (attachments.length) {
           rows.push(resultRow({ icon: "attachment", label: "附件", tags: attachments, wide: true }));
         }
-        finishExtraction(rows.join(""), payload.warnings?.length ? "部分附件内容需要人工确认" : "信息已从邮件正文与附件中整理");
+        const isLlmFallback = options.source === "llm-fallback";
+        finishExtraction(
+          rows.join(""),
+          isLlmFallback
+            ? "LLM 未返回可用结果，当前内容仅来自基础规则，请人工确认型号"
+            : payload.warnings?.length
+              ? "基础规则已完成，部分附件内容需要人工确认"
+              : "基础规则已从邮件正文与附件中整理可用信息",
+          {
+            state: isLlmFallback ? "warning" : "base",
+            status: isLlmFallback ? "LLM 识别未完成 · 已显示基础结果" : "基础规则提取完成",
+            actionLabel: isLlmFallback ? "重试 LLM 识别" : "自动识别型号"
+          }
+        );
       }
 
-      function renderDraftResult(mail, payload) {
+      function renderDraftResult(mail, payload, options = {}) {
         const draft = payload.order_draft || {};
+        const isPartial = options.partial || payload.status === "partial_success";
         const products = (draft.products || []).slice(0, 10);
         const purchaseItems = products.map((item) => ({
           model: item.product_model || "",
@@ -2647,12 +2714,32 @@
         if (attachments.length) {
           rows.push(resultRow({ icon: "attachment", label: "附件", tags: attachments, wide: true }));
         }
-        finishExtraction(rows.join(""), draft.missing_fields?.length ? "仍有少量信息需要人工确认" : "重要业务信息已整理完成");
+        const recognizedModelCount = products.filter((item) => String(item.product_model || "").trim()).length;
+        finishExtraction(
+          rows.join(""),
+          recognizedModelCount
+            ? isPartial
+              ? "已保留可靠的产品型号和名称，未完成的业务字段请人工确认"
+              : draft.missing_fields?.length
+                ? "LLM 已完成型号识别，仍有少量信息需要人工确认"
+                : "LLM 已完成型号识别和业务信息整理"
+            : "LLM 已完成分析，但未识别到明确产品型号，请人工确认",
+          {
+            state: recognizedModelCount && !isPartial ? "success" : "warning",
+            status: recognizedModelCount
+              ? isPartial
+                ? `LLM 部分识别完成 · 已保留 ${recognizedModelCount} 个型号`
+                : `LLM 型号识别完成 · ${recognizedModelCount} 个`
+              : "LLM 分析完成 · 未识别到型号",
+            actionLabel: "重新识别型号"
+          }
+        );
+        return recognizedModelCount;
       }
 
-      function finishExtraction(rowsHtml, note) {
-        elements.extractionStatus.textContent = "已完成智能提取";
-        elements.extractionStatus.style.color = "";
+      function finishExtraction(rowsHtml, note, options = {}) {
+        setExtractionStatus(options.state || "base", options.status || "基础规则提取完成");
+        setExtractionAction(options.actionLabel || "自动识别型号");
         elements.extractionResult.innerHTML = `
           <div class="result-grid">${rowsHtml}</div>
           <p class="result-note">${iconMarkup("note")}<span>${escapeHtml(note)}</span></p>`;
@@ -2664,15 +2751,16 @@
         });
       }
 
-      function renderExtractionError() {
-        elements.extractionStatus.textContent = "暂时无法完成提取";
-        elements.extractionStatus.style.color = "var(--danger)";
+      function renderExtractionError(mode = "base") {
+        const isLlm = mode === "llm";
+        setExtractionStatus("error", isLlm ? "LLM 型号识别失败" : "基础规则提取失败");
+        setExtractionAction(isLlm ? "重试 LLM 识别" : "自动识别型号");
         elements.extractionResult.innerHTML = `
           <div class="result-empty">
             <div>
               <div class="empty-illustration" aria-hidden="true">${iconMarkup("note")}</div>
-              <strong>提取结果暂不可用</strong>
-              <p>请稍后点击“重新提取”。邮件正文和附件不受影响。</p>
+              <strong>${isLlm ? "未获得 LLM 识别结果" : "基础提取结果暂不可用"}</strong>
+              <p>${isLlm ? "请检查模型配置或稍后重试。邮件正文和附件没有被修改。" : "可点击“自动识别型号”再次尝试。邮件正文和附件没有被修改。"}</p>
             </div>
           </div>`;
       }
@@ -2691,12 +2779,12 @@
         const requestId = ++currentExtractionRequest;
         const cached = extractionCache.get(mail.id);
         if (!options.force && cached) {
-          if (cached.kind === "draft") renderDraftResult(mail, cached.payload);
-          else renderAnalyzedResult(mail, cached.payload);
+          if (cached.kind === "draft") renderDraftResult(mail, cached.payload, { partial: cached.payload.status === "partial_success" });
+          else renderAnalyzedResult(mail, cached.payload, { source: cached.source });
           return;
         }
 
-        renderExtractionSkeleton();
+        renderExtractionSkeleton(options.deep ? "llm" : "base");
         elements.refreshExtractionButton.disabled = true;
         try {
           const endpoint = options.deep ? "generate-order-draft" : "analyze-order";
@@ -2705,23 +2793,33 @@
           if (!response.ok) throw new Error(payload.error || "提取失败");
           if (requestId !== currentExtractionRequest || mail.id !== activeMailId) return;
 
-          if (options.deep && payload.status === "success" && payload.order_draft) {
+          if (options.deep && ["success", "partial_success"].includes(payload.status) && payload.order_draft) {
             extractionCache.set(mail.id, { kind: "draft", payload });
-            renderDraftResult(mail, payload);
+            const isPartial = payload.status === "partial_success";
+            const recognizedModelCount = renderDraftResult(mail, payload, { partial: isPartial });
+            showToast(
+              recognizedModelCount
+                ? isPartial
+                  ? `LLM 部分识别完成：已保留 ${recognizedModelCount} 个产品型号`
+                  : `LLM 识别完成：找到 ${recognizedModelCount} 个产品型号`
+                : "LLM 分析完成，但未识别到明确型号",
+              recognizedModelCount && !isPartial ? "success" : "warning"
+            );
           } else if (options.deep) {
             const fallbackResponse = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/analyze-order`, { method: "POST" });
             const fallback = await fallbackResponse.json();
             if (!fallbackResponse.ok) throw new Error("提取失败");
-            extractionCache.set(mail.id, { kind: "analysis", payload: fallback });
-            renderAnalyzedResult(mail, fallback);
-            showToast("已更新当前可用的提取结果", "success");
+            extractionCache.set(mail.id, { kind: "analysis", source: "llm-fallback", payload: fallback });
+            renderAnalyzedResult(mail, fallback, { source: "llm-fallback" });
+            showToast("LLM 识别未完成，当前显示基础规则结果", "warning");
           } else {
-            extractionCache.set(mail.id, { kind: "analysis", payload });
+            extractionCache.set(mail.id, { kind: "analysis", source: "base", payload });
             renderAnalyzedResult(mail, payload);
           }
         } catch {
           if (requestId === currentExtractionRequest && mail.id === activeMailId) {
-            renderExtractionError();
+            renderExtractionError(options.deep ? "llm" : "base");
+            showToast(options.deep ? "LLM 型号识别失败，请检查模型配置后重试" : "基础规则提取失败，请稍后重试", "error");
           }
         } finally {
           if (requestId === currentExtractionRequest) {
@@ -2927,7 +3025,12 @@
           elements.source.textContent = "刚刚同步";
           selectFolder("inbox");
           const added = payload.syncLog?.added || 0;
-          showToast(added ? `同步完成，新增 ${added} 封邮件` : "同步完成，收件箱已是最新", "success");
+          showToast(
+            added
+              ? `同步完成，新增 ${added} 封，当前保留 ${mailRecords.length} 封邮件`
+              : `同步完成，当前保留 ${mailRecords.length} 封邮件`,
+            "success"
+          );
         } catch (error) {
           elements.source.textContent = "同步失败";
           showToast(error.message || "同步失败，请稍后重试", "error");
@@ -2962,7 +3065,10 @@
       });
       elements.refreshExtractionButton.addEventListener("click", () => {
         const mail = getActiveMail();
-        if (mail) loadExtraction(mail, { force: true, deep: true });
+        if (mail) {
+          showToast("已开始 LLM 型号识别，正在分析邮件正文和附件");
+          loadExtraction(mail, { force: true, deep: true });
+        }
       });
       elements.guideButton.addEventListener("click", () => showDialog(elements.guideDialog));
       elements.guideCloseButton.addEventListener("click", () => closeDialog(elements.guideDialog));
