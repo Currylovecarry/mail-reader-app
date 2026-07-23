@@ -28,6 +28,7 @@ export function buildOrderDraftPrompt(extractedContent, structuredHints = {}) {
       "structured_hints 只是辅助线索，不是最终答案；你必须自行结合 content_blocks 做结构化识别。",
       "每个产品都必须包含 evidence，尤其要覆盖 product_model、product_name、quantity、unit。",
       "evidence 至少包含 source、content_block_type、row_index 或 block_index、raw_text。",
+      "evidence.raw_text 只保留支持当前字段的最短必要片段，最多 160 个字符，不要重复整张表或整段正文。",
       "如果 evidence 不充分，请降低 confidence，并在 warnings 中说明。"
     ].join(" "),
     user: [
@@ -40,7 +41,7 @@ export function buildOrderDraftPrompt(extractedContent, structuredHints = {}) {
       "requirements 至少包括 delivery_terms、delivery_date、destination、payment_terms、contact_person、phone、company、project_name。",
       "如果 table/spreadsheet rows 中已经有明确 quantity、unit、product_model、product_name，请优先使用这些结构化值。",
       "如果你的判断与 structured_hints 冲突，不要覆盖明显的结构化值，并在 warnings 中加入冲突说明。",
-      "只输出 JSON。不要输出任何 JSON 之外的内容。",
+      "只输出紧凑 JSON，不要缩进、不要换行、不要输出任何 JSON 之外的内容。",
       "返回顶层 JSON 必须包含：status, order_draft。",
       "status 固定为 success。",
       "order_draft 必须包含：email_id, business_type, product_type, products, requirements, missing_fields, warnings, evidence。",

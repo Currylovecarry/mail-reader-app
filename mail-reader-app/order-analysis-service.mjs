@@ -17,36 +17,36 @@ const quantityUnits = ["pcs", "pieces", "units", "sets", "个", "件", "台", "�
 const quantityUnitPattern = "(pcs|pieces|units|sets|个|件|台|套|箱|包)";
 const numberPattern = "(\\d+(?:,\\d{3})*(?:\\.\\d+)?)";
 
-const businessTypeRules = [
+export const businessTypeRules = [
   {
-    code: "BT1",
-    label: "初次询盘",
-    keywords: ["request for quotation", "quotation", "quote", "inquiry", "price", "rfq", "询价", "报价", "价格"],
-    reason: "邮件中出现询价或报价相关表达"
-  },
-  {
-    code: "BT2",
-    label: "追单邮件",
-    keywords: ["previous quotation", "regarding your offer", "follow up", "any update", "reminder", "跟进", "追问", "上次报价", "之前询价"],
-    reason: "邮件中出现跟进历史报价或询价的表达"
+    code: "BT4",
+    label: "投诉反馈",
+    keywords: ["quality problem", "quality issue", "not working", "complaint", "defect", "damaged", "missing item", "wrong item", "客户投诉", "投诉反馈", "质量问题", "质量异常", "设备故障", "产品故障", "损坏", "不能用", "无法使用", "漏发", "错发"],
+    reason: "邮件中出现质量异常、损坏、故障、错漏发或投诉表达"
   },
   {
     code: "BT3",
     label: "样品申请",
-    keywords: ["test sample", "sample", "trial", "evaluation", "样品", "测试", "试用"],
-    reason: "邮件中出现样品、测试或试用相关表达"
+    keywords: ["test sample", "sample request", "request a sample", "evaluation sample", "sample", "样品申请", "申请样品", "样品", "寄样", "试样", "打样"],
+    reason: "邮件中出现样品、寄样、试样或打样申请"
   },
   {
-    code: "BT4",
-    label: "投诉反馈",
-    keywords: ["quality problem", "not working", "complaint", "issue", "defect", "damaged", "投诉", "质量问题", "损坏", "不能用", "故障"],
-    reason: "邮件中出现质量、损坏、故障或投诉相关表达"
+    code: "BT2",
+    label: "追单邮件",
+    keywords: ["previous quotation", "regarding your offer", "follow up", "follow-up", "checking in", "any update", "still waiting", "reminder regarding", "跟进", "追单", "催单", "上次报价", "之前询价", "尚未收到", "仍未收到"],
+    reason: "邮件中出现跟进历史报价、订单、交期或回复进展的表达"
   },
   {
     code: "BT5",
     label: "合作咨询",
-    keywords: ["partnership", "cooperation", "distributor", "dealer", "agency", "agent", "代理", "经销", "合作", "商务合作"],
-    reason: "邮件中出现代理、经销或商务合作相关表达"
+    keywords: ["partnership", "cooperation", "distributor", "reseller", "sales agency", "vendor onboarding", "channel partner", "代理", "经销", "合作咨询", "商务合作", "渠道合作", "供应商准入"],
+    reason: "邮件中出现代理、经销、渠道、供应商或商务合作表达"
+  },
+  {
+    code: "BT1",
+    label: "初次询盘",
+    keywords: ["request for quotation", "quotation", "quote", "inquiry", "enquiry", "price inquiry", "rfq", "询价", "询盘", "报价", "价格咨询", "产品咨询", "物料需求"],
+    reason: "邮件中出现首次询价、报价或产品咨询表达"
   },
   {
     code: "BT6",

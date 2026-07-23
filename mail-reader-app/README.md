@@ -1,4 +1,4 @@
-# Mail Reader App
+# OrderBridge
 
 This app can run in two mailbox modes:
 
@@ -47,6 +47,10 @@ IMAP mode reads `INBOX` by default, fetches and retains up to 50 recent mails, s
 ## Order Recognition Storage
 
 When `POST /api/mail/:emailId/generate-order-draft` succeeds, the recognized order is saved to the local SQLite file `data/order-recognition.db`. It stores the order's key requirements and its recognized model, quantity, unit, and confidence values. Re-generating the same email replaces its previous items rather than creating duplicates.
+
+For speed, complete high-confidence spreadsheet/table rows are converted locally without an LLM call. Ambiguous body text, images, PDFs, and incomplete tables continue through the configured DeepSeek model. `LLM_TIMEOUT_MS` limits remote model waits and defaults to 30 seconds.
+
+Set `ORDER_DRAFT_CACHE_ENABLED=false` during benchmarking so every request runs independently. When set to `true`, successful responses are cached in memory by mail content and model configuration (up to 100 entries), and concurrent requests for the same mail share one generation.
 
 Matching services can read the intermediate records through:
 

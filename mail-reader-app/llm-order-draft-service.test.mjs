@@ -167,6 +167,36 @@ assert.equal(result.order_draft.requirements.contact_person, "李敏");
 assert.ok(result.order_draft.missing_fields.includes("delivery_date"));
 assert.ok(result.order_draft.warnings.includes("LLM quantity differs from structured quantity"));
 
+let fastPathLlmCalls = 0;
+const fastPathResult = await generateOrderDraft({
+  ...extractedContent,
+  email_id: "mail_fast_path_001",
+  content_blocks: extractedContent.content_blocks.map((block) => block.type === "spreadsheet"
+    ? {
+        ...block,
+        text: [
+          "| 序号 | 产品型号 | 产品名称 | 数量 | 单位 |",
+          "| --- | --- | --- | --- | --- |",
+          "| 1 | GN 5334.4-80-M10 | 球形把手 | 30 | 个 |",
+          "| 2 | GN 115.7-42-B10 | 门锁 | 12 | 套 |"
+        ].join("\n")
+      }
+    : block)
+}, {
+  invokeLlm: async () => {
+    fastPathLlmCalls += 1;
+    throw new Error("高置信度结构化邮件不应调用 LLM");
+  }
+});
+
+assert.equal(fastPathLlmCalls, 0);
+assert.equal(fastPathResult.status, "success");
+assert.equal(fastPathResult.provider, "local_structured");
+assert.equal(fastPathResult.processing.mode, "structured_fast_path");
+assert.equal(fastPathResult.processing.llm_called, false);
+assert.equal(fastPathResult.order_draft.products.length, 2);
+assert.equal(fastPathResult.order_draft.products[0].quantity, 30);
+
 const stringClassificationResult = await generateOrderDraft({
   email_id: "mail_string_classification",
   subject: "设备故障投诉",

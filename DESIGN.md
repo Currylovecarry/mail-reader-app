@@ -1,5 +1,5 @@
 ---
-name: "邮件结构化提取台"
+name: "OrderBridge"
 description: "面向企业工作人员的轻量清晰收件箱工具"
 colors:
   primary: "#222222"
@@ -67,7 +67,7 @@ components:
     padding: "14px 12px"
 ---
 
-# Design System: 邮件结构化提取台
+# Design System: OrderBridge
 
 ## 1. Overview
 

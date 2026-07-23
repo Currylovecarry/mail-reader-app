@@ -3,7 +3,19 @@
 mail-reader-app/.env
 mail-reader-app/node_modules/
 
+# Local editor and agent tooling
+.claude/
+.codex/
+.cursor/
+.impeccable/
+mail-reader-app/.idea/
+
 # Generated mail import data
 mail-reader-app/imported-attachments/
 mail-reader-app/data/
 mail-reader-app/*.traineddata
+
+# Generated test artifacts
+mail-reader-app/output/
+mail-reader-app/outputs/
+mail-reader-app/tmp/

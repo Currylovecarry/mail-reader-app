@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +22,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const host = "127.0.0.1";
 const port = Number(process.env.PORT || 3080);
+const orderDraftCache = new Map();
+const orderDraftInFlight = new Map();
+const maxOrderDraftCacheEntries = 100;
 
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
@@ -30,6 +34,68 @@ function sendJson(response, statusCode, payload) {
 function sendText(response, statusCode, body, contentType = "text/plain; charset=utf-8") {
   response.writeHead(statusCode, { "Content-Type": contentType });
   response.end(body);
+}
+
+function buildOrderDraftCacheKey(mail) {
+  return createHash("sha256")
+    .update(JSON.stringify({
+      cache_version: 1,
+      model: process.env.LLM_MODEL || "",
+      base_url: process.env.LLM_BASE_URL || "",
+      mail
+    }))
+    .digest("hex");
+}
+
+function readCachedOrderDraft(cacheKey) {
+  const cached = orderDraftCache.get(cacheKey);
+  if (!cached) {
+    return null;
+  }
+  orderDraftCache.delete(cacheKey);
+  orderDraftCache.set(cacheKey, cached);
+  return structuredClone(cached);
+}
+
+function writeCachedOrderDraft(cacheKey, payload) {
+  orderDraftCache.delete(cacheKey);
+  orderDraftCache.set(cacheKey, structuredClone(payload));
+  while (orderDraftCache.size > maxOrderDraftCacheEntries) {
+    const oldestKey = orderDraftCache.keys().next().value;
+    orderDraftCache.delete(oldestKey);
+  }
+}
+
+function isOrderDraftCacheEnabled() {
+  const value = String(process.env.ORDER_DRAFT_CACHE_ENABLED ?? "true").trim().toLowerCase();
+  return !["0", "false", "no", "off"].includes(value);
+}
+
+async function generateAndPersistOrderDraft(mail) {
+  const extracted = await extractEmailContent(mail);
+  const payload = await generateOrderDraft(extracted);
+  if (["success", "partial_success"].includes(payload.status) && payload.order_draft) {
+    const record = await orderRecognitionRepository.saveOrderDraft(payload.order_draft);
+    payload.persistence = {
+      status: "saved",
+      result_status: payload.status,
+      recognition_order_id: record.id
+    };
+  }
+  return payload;
+}
+
+function addRequestPerformance(payload, { cacheEnabled, cacheHit, sharedRequest, durationMs }) {
+  return {
+    ...payload,
+    processing: {
+      ...(payload.processing || {}),
+      cache_enabled: cacheEnabled,
+      cache_hit: cacheHit,
+      shared_request: sharedRequest,
+      server_duration_ms: Number(durationMs.toFixed(1))
+    }
+  };
 }
 
 async function handleStaticFile(response, targetPath) {
@@ -102,6 +168,14 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/") {
       await handleStaticFile(response, path.join(__dirname, "index.html"));
+      return;
+    }
+
+    if (
+      request.method === "GET"
+      && ["/mail-category-classifier.js", "/mail-data.js"].includes(url.pathname)
+    ) {
+      await handleStaticFile(response, path.join(__dirname, path.basename(url.pathname)));
       return;
     }
 
@@ -188,6 +262,7 @@ const server = createServer(async (request, response) => {
 
     const generateDraftMatch = url.pathname.match(/^\/api\/mail\/(.+)\/generate-order-draft$/);
     if (request.method === "POST" && generateDraftMatch) {
+      const startedAt = performance.now();
       const emailId = generateDraftMatch[1];
       const stored = await readStoredMails();
       const mail = findStoredMail(stored, emailId);
@@ -197,18 +272,52 @@ const server = createServer(async (request, response) => {
         return;
       }
 
-      const extracted = await extractEmailContent(mail);
-      const payload = await generateOrderDraft(extracted);
-      if (["success", "partial_success"].includes(payload.status) && payload.order_draft) {
-        const record = await orderRecognitionRepository.saveOrderDraft(payload.order_draft);
-        payload.persistence = {
-          status: "saved",
-          result_status: payload.status,
-          recognition_order_id: record.id
-        };
+      const cacheEnabled = isOrderDraftCacheEnabled();
+      const cacheKey = cacheEnabled ? buildOrderDraftCacheKey(mail) : "";
+      const cachedPayload = cacheEnabled ? readCachedOrderDraft(cacheKey) : null;
+      if (cachedPayload) {
+        const payload = addRequestPerformance(cachedPayload, {
+          cacheEnabled,
+          cacheHit: true,
+          sharedRequest: false,
+          durationMs: performance.now() - startedAt
+        });
+        console.info(
+          `[generate-order-draft] email_id=${mail.id} status=${payload.status} products=${payload.order_draft?.products?.length || 0} mode=${payload.processing?.mode || "llm"} cache=hit duration_ms=${payload.processing.server_duration_ms}`
+        );
+        sendJson(response, 200, payload);
+        return;
       }
+
+      let generation = cacheEnabled ? orderDraftInFlight.get(cacheKey) : null;
+      const sharedRequest = Boolean(generation);
+      if (!generation) {
+        generation = generateAndPersistOrderDraft(mail);
+        if (cacheEnabled) {
+          orderDraftInFlight.set(cacheKey, generation);
+        }
+      }
+
+      let generatedPayload;
+      try {
+        generatedPayload = await generation;
+      } finally {
+        if (cacheEnabled && !sharedRequest) {
+          orderDraftInFlight.delete(cacheKey);
+        }
+      }
+
+      if (cacheEnabled && ["success", "partial_success"].includes(generatedPayload.status) && generatedPayload.order_draft) {
+        writeCachedOrderDraft(cacheKey, generatedPayload);
+      }
+      const payload = addRequestPerformance(generatedPayload, {
+        cacheEnabled,
+        cacheHit: sharedRequest,
+        sharedRequest,
+        durationMs: performance.now() - startedAt
+      });
       console.info(
-        `[generate-order-draft] email_id=${mail.id} status=${payload.status} products=${payload.order_draft?.products?.length || 0}`
+        `[generate-order-draft] email_id=${mail.id} status=${payload.status} products=${payload.order_draft?.products?.length || 0} mode=${payload.processing?.mode || "llm"} cache=${cacheEnabled ? (payload.processing.cache_hit ? "hit" : "miss") : "disabled"} duration_ms=${payload.processing.server_duration_ms}`
       );
       sendJson(response, 200, payload);
       return;
@@ -233,5 +342,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Mail reader server running at http://${host}:${port}`);
+  console.log(`OrderBridge server running at http://${host}:${port}`);
 });

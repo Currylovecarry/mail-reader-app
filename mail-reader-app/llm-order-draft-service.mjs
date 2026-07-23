@@ -1,7 +1,7 @@
 import { analyzeOrderContent } from "./order-analysis-service.mjs";
 import { buildOrderDraftPrompt } from "./llm-order-prompt.mjs";
 
-const BUSINESS_TYPE_LABELS = {
+export const BUSINESS_TYPE_LABELS = {
   BT1: "初次询盘",
   BT2: "追单邮件",
   BT3: "样品申请",
@@ -41,6 +41,11 @@ const MISSING_FIELD_LABELS = {
 
 export async function generateOrderDraft(extractedContent, options = {}) {
   const structuredHints = buildStructuredHints(extractedContent);
+  const fastPathPayload = createStructuredFastPathPayload(extractedContent, structuredHints, options);
+  if (fastPathPayload) {
+    return fastPathPayload;
+  }
+
   const prompt = buildOrderDraftPrompt(extractedContent, structuredHints);
   const invokeLlm = options.invokeLlm || invokeOpenAiCompatibleLlm;
 
@@ -130,6 +135,7 @@ async function invokeOpenAiCompatibleLlm(prompt) {
 
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
+    signal: AbortSignal.timeout(config.timeoutMs),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.apiKey}`
@@ -137,6 +143,7 @@ async function invokeOpenAiCompatibleLlm(prompt) {
     body: JSON.stringify({
       model: config.model,
       temperature: 0.1,
+      ...(config.useJsonMode ? { response_format: { type: "json_object" } } : {}),
       messages: [
         { role: "system", content: prompt.system },
         { role: "user", content: prompt.user }
@@ -160,11 +167,114 @@ async function invokeOpenAiCompatibleLlm(prompt) {
 }
 
 function getLlmConfig() {
+  const baseUrl = String(process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
   return {
-    baseUrl: String(process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, ""),
+    baseUrl,
     model: process.env.LLM_MODEL || "gpt-4o-mini",
-    apiKey: process.env.LLM_API_KEY || ""
+    apiKey: process.env.LLM_API_KEY || "",
+    timeoutMs: clampTimeout(process.env.LLM_TIMEOUT_MS, 30_000),
+    useJsonMode: /api\.deepseek\.com(?:\/v1)?$/i.test(baseUrl)
   };
+}
+
+function createStructuredFastPathPayload(extractedContent, structuredHints, options) {
+  if (options.forceLlm === true || options.structuredFastPath === false) {
+    return null;
+  }
+
+  const products = structuredHints?.structured_products || [];
+  const businessType = structuredHints?.heuristic_analysis?.business_type || {};
+  const productType = structuredHints?.heuristic_analysis?.product_type || {};
+  if (!isHighConfidenceStructuredInput(products, businessType, productType)) {
+    return null;
+  }
+
+  const orderDraft = normalizeDraft({}, extractedContent, structuredHints);
+  orderDraft.evidence.business_type = findClassificationEvidence(
+    extractedContent?.content_blocks,
+    businessType
+  );
+  orderDraft.evidence.product_type = normalizeEvidence(products[0]?.evidence);
+
+  const validationErrors = validateOrderDraft(orderDraft);
+  if (validationErrors.length) {
+    return null;
+  }
+
+  return {
+    status: "success",
+    email_id: extractedContent?.email_id || "",
+    plain_summary: buildPlainSummary(orderDraft),
+    provider: "local_structured",
+    model: "local-structured-v1",
+    extracted_block_count: Array.isArray(extractedContent?.content_blocks) ? extractedContent.content_blocks.length : 0,
+    order_draft: orderDraft,
+    raw_llm_response: "",
+    validation_errors: [],
+    error: "",
+    processing: {
+      mode: "structured_fast_path",
+      llm_called: false
+    }
+  };
+}
+
+function isHighConfidenceStructuredInput(products, businessType, productType) {
+  const validBusinessType = BUSINESS_TYPE_LABELS[businessType?.code]
+    && businessType.code !== "unknown"
+    && Number(businessType.confidence) >= 0.72;
+  const validProductType = PRODUCT_TYPE_LABELS[productType?.code]
+    && Number(productType.confidence) >= 0.72;
+  const completeProducts = Array.isArray(products)
+    && products.length > 0
+    && products.every((product) => {
+      const evidenceType = String(product?.evidence?.content_block_type || "");
+      const quantity = Number(product?.quantity);
+      return ["spreadsheet", "table"].includes(evidenceType)
+        && Number(product?.confidence) >= 0.9
+        && Boolean(String(product?.product_model || "").trim())
+        && Boolean(String(product?.product_name || "").trim())
+        && Number.isFinite(quantity)
+        && quantity > 0
+        && Boolean(String(product?.unit || "").trim())
+        && Boolean(String(product?.evidence?.source || "").trim())
+        && Boolean(String(product?.evidence?.raw_text || "").trim());
+    });
+
+  return Boolean(validBusinessType && validProductType && completeProducts);
+}
+
+function findClassificationEvidence(contentBlocks, classification) {
+  const blocks = Array.isArray(contentBlocks) ? contentBlocks : [];
+  const keywords = Array.isArray(classification?.matched_keywords)
+    ? classification.matched_keywords
+    : [];
+
+  for (const keyword of keywords) {
+    const normalizedKeyword = String(keyword || "").toLowerCase();
+    if (!normalizedKeyword) {
+      continue;
+    }
+    const blockIndex = blocks.findIndex((block) =>
+      String(block?.text || "").toLowerCase().includes(normalizedKeyword)
+    );
+    if (blockIndex >= 0) {
+      return createEvidence(blocks[blockIndex], keyword, { blockIndex });
+    }
+  }
+
+  const fallbackIndex = blocks.findIndex((block) => ["body_text", "spreadsheet", "table"].includes(block?.type));
+  return fallbackIndex >= 0
+    ? createEvidence(blocks[fallbackIndex], String(classification?.reason || ""), { blockIndex: fallbackIndex })
+    : null;
+}
+
+function clampTimeout(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(5_000, Math.min(120_000, Math.round(parsed)));
 }
 
 function buildStructuredHints(extractedContent) {

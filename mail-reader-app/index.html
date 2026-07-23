@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f7f8fa" />
-    <title>Smart Mail · 智能邮件助手</title>
+    <title>OrderBridge · 邮件智能订单处理系统</title>
     <style>
       :root {
         color-scheme: light;
@@ -960,6 +960,7 @@
       }
 
       .file-name {
+        display: block;
         overflow: hidden;
         font-size: 12px;
         font-weight: 700;
@@ -968,6 +969,7 @@
       }
 
       .file-meta {
+        display: block;
         margin-top: 3px;
         overflow: hidden;
         color: var(--muted);
@@ -1528,18 +1530,20 @@
         z-index: var(--z-toast);
         right: 24px;
         bottom: 24px;
-        display: flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr);
+        align-items: start;
         gap: 10px;
         width: max-content;
-        max-width: calc(100vw - 48px);
+        max-width: min(440px, calc(100vw - 48px));
         min-height: 48px;
-        padding: 11px 14px;
+        padding: 12px 14px;
         border-radius: var(--radius-md);
         color: #ffffff;
         background: #263236;
         box-shadow: 0 8px 24px rgba(28, 39, 44, 0.18);
         font-size: 13px;
+        line-height: 1.5;
         opacity: 0;
         pointer-events: none;
         transform: translateY(12px);
@@ -1566,14 +1570,14 @@
       .toast .icon {
         width: 18px;
         height: 18px;
+        margin-top: 1px;
       }
 
       .toast span {
         display: block;
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: anywhere;
+        white-space: normal;
       }
 
       .mobile-scrim {
@@ -1847,8 +1851,8 @@
       <aside class="navigation" aria-label="邮件导航">
         <div class="brand">
           <div class="brand-copy">
-            <div class="brand-title">Smart Mail</div>
-            <div class="brand-subtitle">智能邮件助手</div>
+            <div class="brand-title">OrderBridge</div>
+            <div class="brand-subtitle">邮件智能订单处理系统</div>
           </div>
         </div>
 
@@ -1886,39 +1890,70 @@
           </button>
           <button class="nav-item" type="button" data-folder="new">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3.5" y="6" width="17" height="13" rx="3"></rect>
-              <path d="m5.5 9 6.5 5 6.5-5M18 3v6M15 6h6"></path>
+              <rect x="3.5" y="9.5" width="17" height="11" rx="2.5"></rect>
+              <path d="m5.5 12 5.6 4.25a1.5 1.5 0 0 0 1.8 0l5.6-4.25"></path>
+              <path d="M12 2.5v4M10 4.5h4"></path>
             </svg>
             <span class="nav-label">新增邮件</span>
             <span class="nav-count" id="new-count">0</span>
           </button>
         </nav>
 
-        <nav class="nav-section" aria-label="邮件标签">
-          <h2 class="nav-heading">标签</h2>
-          <button class="nav-item" type="button" data-label="customer">
-            <span class="label-dot" style="--label-color: #ee745d"></span>
-            <span class="nav-label">客户邮件</span>
-          </button>
-          <button class="nav-item" type="button" data-label="quotation">
+        <nav class="nav-section" aria-label="业务类型">
+          <h2 class="nav-heading">业务类型</h2>
+          <button class="nav-item" type="button" data-label="BT1" title="BT1 · 首次询价、报价请求、产品规格及交期咨询">
             <span class="label-dot" style="--label-color: #e9a92f"></span>
-            <span class="nav-label">报价咨询</span>
+            <span class="nav-label">BT1 · 初次询盘</span>
+            <span class="nav-count" data-label-count="BT1">0</span>
           </button>
-          <button class="nav-item" type="button" data-label="sample">
-            <span class="label-dot" style="--label-color: #4c9de7"></span>
-            <span class="nav-label">样品申请</span>
-          </button>
-          <button class="nav-item" type="button" data-label="order">
+          <button class="nav-item" type="button" data-label="BT2" title="BT2 · 跟进报价、订单、交期、发货或回复进展">
             <span class="label-dot" style="--label-color: #35b980"></span>
-            <span class="nav-label">订单处理</span>
+            <span class="nav-label">BT2 · 追单邮件</span>
+            <span class="nav-count" data-label-count="BT2">0</span>
           </button>
-          <button class="nav-item" type="button" data-label="service">
+          <button class="nav-item" type="button" data-label="BT3" title="BT3 · 样品、寄样、试用、打样及评估申请">
+            <span class="label-dot" style="--label-color: #4c9de7"></span>
+            <span class="nav-label">BT3 · 样品申请</span>
+            <span class="nav-count" data-label-count="BT3">0</span>
+          </button>
+          <button class="nav-item" type="button" data-label="BT4" title="BT4 · 质量异常、故障、损坏、错漏发及投诉反馈">
+            <span class="label-dot" style="--label-color: #ee745d"></span>
+            <span class="nav-label">BT4 · 投诉反馈</span>
+            <span class="nav-count" data-label-count="BT4">0</span>
+          </button>
+          <button class="nav-item" type="button" data-label="BT5" title="BT5 · 代理、经销、渠道、供应商及项目合作咨询">
             <span class="label-dot" style="--label-color: #8c6ce4"></span>
-            <span class="nav-label">售后服务</span>
+            <span class="nav-label">BT5 · 合作咨询</span>
+            <span class="nav-count" data-label-count="BT5">0</span>
           </button>
-          <button class="nav-item" type="button" data-label="marketing">
+          <button class="nav-item" type="button" data-label="BT6" title="BT6 · 维修收据、服务确认、工作授权、发票及付款凭证">
+            <span class="label-dot" style="--label-color: #2fa99f"></span>
+            <span class="nav-label">BT6 · 售后凭证</span>
+            <span class="nav-count" data-label-count="BT6">0</span>
+          </button>
+        </nav>
+
+        <nav class="nav-section" aria-label="辅助分类">
+          <h2 class="nav-heading">辅助分类</h2>
+          <button class="nav-item" type="button" data-label="transaction" title="普通订单确认、付款、发货、物流及到货通知">
+            <span class="label-dot" style="--label-color: #4c8ed9"></span>
+            <span class="nav-label">交易通知</span>
+            <span class="nav-count" data-label-count="transaction">0</span>
+          </button>
+          <button class="nav-item" type="button" data-label="notification" title="账户、安全、验证、账单及平台状态通知">
+            <span class="label-dot" style="--label-color: #768791"></span>
+            <span class="nav-label">系统通知</span>
+            <span class="nav-count" data-label-count="notification">0</span>
+          </button>
+          <button class="nav-item" type="button" data-label="marketing" title="促销、招聘、活动、课程及订阅推广">
             <span class="label-dot" style="--label-color: #d36f9d"></span>
-            <span class="nav-label">市场营销</span>
+            <span class="nav-label">营销推广</span>
+            <span class="nav-count" data-label-count="marketing">0</span>
+          </button>
+          <button class="nav-item" type="button" data-label="other" title="暂未识别到明确业务意图的邮件">
+            <span class="label-dot" style="--label-color: #9aa3a8"></span>
+            <span class="nav-label">其他邮件</span>
+            <span class="nav-count" data-label-count="other">0</span>
           </button>
         </nav>
 
@@ -2027,7 +2062,7 @@
                   <path d="m5.5 8 6.5 5 6.5-5"></path>
                 </svg>
               </div>
-              <h2>欢迎使用 Smart Mail</h2>
+              <h2>欢迎使用 OrderBridge</h2>
               <p>从左侧选择一封邮件，即可阅读正文并查看已提取的重要业务信息。</p>
             </div>
           </div>
@@ -2144,13 +2179,15 @@
       </div>
     </dialog>
 
-    <div class="toast" id="toast" role="status" aria-live="polite">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m5 12 4 4L19 6"></path>
+    <div class="toast info" id="toast" role="status" aria-live="polite" aria-atomic="true">
+      <svg class="icon" id="toast-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 10.5V16M12 7.5h.01"></path>
       </svg>
       <span id="toast-text"></span>
     </div>
 
+    <script src="./mail-category-classifier.js"></script>
     <script src="./mail-data.js"></script>
     <script>
       const elements = {
@@ -2210,6 +2247,7 @@
         composeCancelButton: document.getElementById("compose-cancel-button"),
         sendButton: document.getElementById("send-button"),
         toast: document.getElementById("toast"),
+        toastIcon: document.getElementById("toast-icon"),
         toastText: document.getElementById("toast-text")
       };
 
@@ -2221,26 +2259,14 @@
         new: "新增邮件"
       };
 
-      const labelTitles = {
-        customer: "客户邮件",
-        quotation: "报价咨询",
-        sample: "样品申请",
-        order: "订单处理",
-        service: "售后服务",
-        marketing: "市场营销"
-      };
-
-      const categoryStyles = {
-        customer: { label: "客户邮件", color: "#ee745d" },
-        quotation: { label: "报价咨询", color: "#e9a92f" },
-        sample: { label: "样品申请", color: "#4c9de7" },
-        order: { label: "订单处理", color: "#35b980" },
-        service: { label: "售后服务", color: "#8c6ce4" },
-        marketing: { label: "市场营销", color: "#d36f9d" }
-      };
+      const { categoryStyles, categorizeMail } = window.MailCategoryClassifier;
+      const labelTitles = Object.fromEntries(
+        Object.entries(categoryStyles).map(([id, category]) => [id, category.label])
+      );
 
       const avatarColors = ["#2fa99f", "#4c8ed9", "#8b6bcf", "#d88938", "#d76067", "#3ba77b"];
       const extractionCache = new Map();
+      const extractionCacheEnabled = false;
       const starredMailIds = new Set();
       const deletedMailIds = new Set();
       const processedMailIds = new Set(readStoredIds("smart-mail-processed"));
@@ -2300,13 +2326,27 @@
           .replaceAll("'", "&#39;");
       }
 
-      function showToast(message, tone = "") {
+      const toastIcons = {
+        info: '<circle cx="12" cy="12" r="9"></circle><path d="M12 10.5V16M12 7.5h.01"></path>',
+        success: '<circle cx="12" cy="12" r="9"></circle><path d="m8 12 2.5 2.5L16.5 9"></path>',
+        warning: '<path d="M10.3 4.2 2.8 17.5A2 2 0 0 0 4.6 20h14.8a2 2 0 0 0 1.8-2.5L13.7 4.2a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4M12 16.5h.01"></path>',
+        error: '<circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6M15 9l-6 6"></path>'
+      };
+
+      function showToast(message, tone = "info") {
+        const normalizedTone = Object.hasOwn(toastIcons, tone) ? tone : "info";
+        const normalizedMessage = String(message || "操作状态已更新");
         window.clearTimeout(toastTimer);
-        elements.toastText.textContent = message;
-        elements.toast.className = tone ? `toast visible ${tone}` : "toast visible";
+        elements.toastText.textContent = normalizedMessage;
+        elements.toastIcon.innerHTML = toastIcons[normalizedTone];
+        elements.toast.className = `toast ${normalizedTone}`;
+        elements.toast.setAttribute("role", normalizedTone === "error" ? "alert" : "status");
+        elements.toast.setAttribute("aria-live", normalizedTone === "error" ? "assertive" : "polite");
+        window.requestAnimationFrame(() => elements.toast.classList.add("visible"));
+        const displayDuration = Math.min(7000, Math.max(3600, normalizedMessage.length * 90));
         toastTimer = window.setTimeout(() => {
-          elements.toast.className = "toast";
-        }, 3200);
+          elements.toast.classList.remove("visible");
+        }, displayDuration);
       }
 
       function showDialog(dialog) {
@@ -2399,16 +2439,6 @@
         return [mail?.subject || "", mail?.sender || "", ...(mail?.body || [])].join(" ");
       }
 
-      function categorizeMail(mail) {
-        const text = getMailText(mail);
-        if (/样品|sample|trial|evaluation/i.test(text)) return "sample";
-        if (/订单|采购|purchase order|\bpo\b|下单|发货/i.test(text)) return "order";
-        if (/售后|投诉|故障|损坏|complaint|defect|not working/i.test(text)) return "service";
-        if (/活动|促销|newsletter|marketing|优惠|广告|推广/i.test(text)) return "marketing";
-        if (/询价|报价|quote|quotation|rfq|price|exw|fob|cif/i.test(text)) return "quotation";
-        return "customer";
-      }
-
       function getVisibleMails() {
         let records = mailRecords;
         if (activeFolder === "starred") {
@@ -2436,11 +2466,27 @@
 
       function updateNavigationCounts() {
         const availableMails = mailRecords.filter((mail) => !deletedMailIds.has(mail.id));
+        const labelCounts = Object.fromEntries(Object.keys(categoryStyles).map((id) => [id, 0]));
+        availableMails.forEach((mail) => {
+          const category = categorizeMail(mail);
+          labelCounts[category] = (labelCounts[category] || 0) + 1;
+        });
         elements.inboxCount.textContent = availableMails.length;
         elements.starredCount.textContent = starredMailIds.size;
         elements.unprocessedCount.textContent = availableMails.filter((mail) => !processedMailIds.has(mail.id)).length;
         elements.processedCount.textContent = availableMails.filter((mail) => processedMailIds.has(mail.id)).length;
         elements.newCount.textContent = availableMails.filter((mail) => newMailIds.has(mail.id)).length;
+        document.querySelectorAll("[data-label-count]").forEach((counter) => {
+          const category = counter.dataset.labelCount;
+          const count = labelCounts[category] || 0;
+          counter.textContent = count;
+          const button = counter.closest("[data-label]");
+          if (button) {
+            const details = categoryStyles[category];
+            const codePrefix = details.code ? `${details.code} · ` : "";
+            button.setAttribute("aria-label", `${codePrefix}${details.label}，${count} 封邮件。${details.description}`);
+          }
+        });
       }
 
       function renderList() {
@@ -2571,7 +2617,7 @@
                 </svg>
               </span>
               <span class="file-copy">
-                <span class="file-name">${escapeHtml(attachment.name)}</span>
+                <span class="file-name" title="${escapeHtml(attachment.name)}">${escapeHtml(attachment.name)}</span>
                 <span class="file-meta">${escapeHtml(summary)}</span>
               </span>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -2595,10 +2641,10 @@
       function renderExtractionSkeleton(mode = "base") {
         elements.extractionCard.classList.remove("is-ready");
         const isLlm = mode === "llm";
-        setExtractionStatus("pending", isLlm ? "LLM 正在识别型号" : "正在进行基础规则提取");
+        setExtractionStatus("pending", isLlm ? "正在智能识别型号" : "正在进行基础规则提取");
         setExtractionAction(isLlm ? "型号识别中" : "自动识别型号");
         elements.extractionResult.innerHTML = `
-          <div class="skeleton-list" aria-label="${isLlm ? "LLM 正在识别型号" : "正在进行基础规则提取"}">
+          <div class="skeleton-list" aria-label="${isLlm ? "正在智能识别型号" : "正在进行基础规则提取"}">
             ${Array.from({ length: 6 }, () => '<div class="skeleton-item"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>').join("")}
           </div>`;
       }
@@ -2728,6 +2774,14 @@
       function renderDraftResult(mail, payload, options = {}) {
         const draft = payload.order_draft || {};
         const isPartial = options.partial || payload.status === "partial_success";
+        const isFastPath = payload.provider === "local_structured"
+          || payload.processing?.mode === "structured_fast_path";
+        const isCacheHit = payload.processing?.cache_hit === true;
+        const completedSourceLabel = isCacheHit
+          ? "已复用识别结果"
+          : isFastPath
+            ? "本地快速识别完成"
+            : "DeepSeek 识别完成";
         const products = (draft.products || []).slice(0, 10);
         const purchaseItems = products.map((item) => ({
           model: item.product_model || "",
@@ -2762,16 +2816,16 @@
             ? isPartial
               ? "已保留可靠的产品型号和名称，未完成的业务字段请人工确认"
               : draft.missing_fields?.length
-                ? "LLM 已完成型号识别，仍有少量信息需要人工确认"
-                : "LLM 已完成型号识别和业务信息整理"
-            : "LLM 已完成分析，但未识别到明确产品型号，请人工确认",
+                ? `${completedSourceLabel}，仍有少量信息需要人工确认`
+                : `${completedSourceLabel}，型号和业务信息已整理`
+            : `${completedSourceLabel}，但未识别到明确产品型号，请人工确认`,
           {
             state: recognizedModelCount && !isPartial ? "success" : "warning",
             status: recognizedModelCount
               ? isPartial
-                ? `LLM 部分识别完成 · 已保留 ${recognizedModelCount} 个型号`
-                : `LLM 型号识别完成 · ${recognizedModelCount} 个`
-              : "LLM 分析完成 · 未识别到型号",
+                ? `部分识别完成 · 已保留 ${recognizedModelCount} 个型号`
+                : `${completedSourceLabel} · ${recognizedModelCount} 个`
+              : `${completedSourceLabel} · 未识别到型号`,
             actionLabel: "重新识别型号"
           }
         );
@@ -2818,7 +2872,7 @@
       async function loadExtraction(mail, options = {}) {
         if (!mail) return;
         const requestId = ++currentExtractionRequest;
-        const cached = extractionCache.get(mail.id);
+        const cached = extractionCacheEnabled ? extractionCache.get(mail.id) : null;
         if (!options.force && cached) {
           if (cached.kind === "draft") renderDraftResult(mail, cached.payload, { partial: cached.payload.status === "partial_success" });
           else renderAnalyzedResult(mail, cached.payload, { source: cached.source });
@@ -2835,26 +2889,39 @@
           if (requestId !== currentExtractionRequest || mail.id !== activeMailId) return;
 
           if (options.deep && ["success", "partial_success"].includes(payload.status) && payload.order_draft) {
-            extractionCache.set(mail.id, { kind: "draft", payload });
+            if (extractionCacheEnabled) {
+              extractionCache.set(mail.id, { kind: "draft", payload });
+            }
             const isPartial = payload.status === "partial_success";
+            const isFastPath = payload.provider === "local_structured"
+              || payload.processing?.mode === "structured_fast_path";
+            const isCacheHit = payload.processing?.cache_hit === true;
             const recognizedModelCount = renderDraftResult(mail, payload, { partial: isPartial });
             showToast(
               recognizedModelCount
                 ? isPartial
-                  ? `LLM 部分识别完成：已保留 ${recognizedModelCount} 个产品型号`
-                  : `LLM 识别完成：找到 ${recognizedModelCount} 个产品型号`
-                : "LLM 分析完成，但未识别到明确型号",
+                  ? `部分识别完成：已保留 ${recognizedModelCount} 个产品型号`
+                  : isCacheHit
+                    ? `已复用识别结果：找到 ${recognizedModelCount} 个产品型号`
+                    : isFastPath
+                      ? `快速识别完成：找到 ${recognizedModelCount} 个产品型号`
+                      : `DeepSeek 识别完成：找到 ${recognizedModelCount} 个产品型号`
+                : "智能识别完成，但未识别到明确型号",
               recognizedModelCount && !isPartial ? "success" : "warning"
             );
           } else if (options.deep) {
             const fallbackResponse = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/analyze-order`, { method: "POST" });
             const fallback = await fallbackResponse.json();
             if (!fallbackResponse.ok) throw new Error("提取失败");
-            extractionCache.set(mail.id, { kind: "analysis", source: "llm-fallback", payload: fallback });
+            if (extractionCacheEnabled) {
+              extractionCache.set(mail.id, { kind: "analysis", source: "llm-fallback", payload: fallback });
+            }
             renderAnalyzedResult(mail, fallback, { source: "llm-fallback" });
             showToast("LLM 识别未完成，当前显示基础规则结果", "warning");
           } else {
-            extractionCache.set(mail.id, { kind: "analysis", source: "base", payload });
+            if (extractionCacheEnabled) {
+              extractionCache.set(mail.id, { kind: "analysis", source: "base", payload });
+            }
             renderAnalyzedResult(mail, payload);
           }
         } catch {
@@ -3141,7 +3208,7 @@
       elements.refreshExtractionButton.addEventListener("click", () => {
         const mail = getActiveMail();
         if (mail) {
-          showToast("已开始 LLM 型号识别，正在分析邮件正文和附件");
+          showToast("已开始智能型号识别，正在分析邮件正文和附件");
           loadExtraction(mail, { force: true, deep: true });
         }
       });
