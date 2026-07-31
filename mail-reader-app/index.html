@@ -1233,6 +1233,86 @@
         font-weight: 600;
       }
 
+      .product-match-summary {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+      }
+
+      .product-match-summary-copy {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        min-width: 0;
+      }
+
+      .product-match-summary-title {
+        color: var(--text);
+        font-size: 11px;
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      .product-match-summary-text {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 550;
+        line-height: 1.5;
+      }
+
+      .product-match-summary[data-state="success"] .product-match-summary-title {
+        color: #166b50;
+      }
+
+      .product-match-summary[data-state="warning"] .product-match-summary-title {
+        color: #82570f;
+      }
+
+      .product-match-summary[data-state="error"] .product-match-summary-title {
+        color: #a92f37;
+      }
+
+      .match-refresh-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 30px;
+        flex: 0 0 auto;
+        padding: 5px 9px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        color: var(--text-soft);
+        background: var(--surface);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+      }
+
+      .match-refresh-button:hover {
+        color: var(--accent-strong);
+        border-color: #bdd9d6;
+        background: var(--surface-tint);
+      }
+
+      .match-refresh-button:disabled {
+        cursor: wait;
+        opacity: 0.62;
+      }
+
+      .match-refresh-button .icon {
+        width: 14px;
+        height: 14px;
+        flex-basis: 14px;
+      }
+
       .purchase-list {
         margin-top: 9px;
         border-top: 1px solid var(--line);
@@ -1289,6 +1369,246 @@
         font-weight: 500;
         line-height: 1.4;
         text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .purchase-match-line {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        grid-column: 2 / -1;
+        gap: 5px 7px;
+        margin-top: -2px;
+      }
+
+      .match-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 750;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+
+      .match-badge.exact {
+        color: #166b50;
+        background: var(--success-soft);
+      }
+
+      .match-badge.review {
+        color: #82570f;
+        background: var(--warning-soft);
+      }
+
+      .match-badge.missing {
+        color: #a92f37;
+        background: var(--danger-soft);
+      }
+
+      .match-code,
+      .match-score {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.45;
+      }
+
+      .match-code strong {
+        color: var(--text-soft);
+        font-weight: 750;
+      }
+
+      .match-price {
+        color: #166b50;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.45;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .preliminary-quote {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px 18px;
+        margin-top: 12px;
+        padding: 13px 14px;
+        border: 1px solid #c9e0dc;
+        border-radius: var(--radius-sm);
+        background: #f3faf8;
+      }
+
+      .preliminary-quote[data-status="partial"],
+      .preliminary-quote[data-status="unavailable"] {
+        border-color: #ead9b5;
+        background: #fffaf0;
+      }
+
+      .quote-copy {
+        min-width: 0;
+      }
+
+      .quote-title {
+        display: block;
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1.45;
+      }
+
+      .quote-meta {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 550;
+        line-height: 1.5;
+      }
+
+      .quote-total {
+        align-self: center;
+        color: #166b50;
+        font-size: 21px;
+        font-weight: 780;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .preliminary-quote[data-status="partial"] .quote-total,
+      .preliminary-quote[data-status="unavailable"] .quote-total {
+        color: #82570f;
+      }
+
+      .quote-disclaimer {
+        grid-column: 1 / -1;
+        margin: 5px 0 0;
+        padding-top: 7px;
+        border-top: 1px solid rgba(22, 107, 80, 0.12);
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+      }
+
+      .preliminary-quote[data-status="partial"] .quote-disclaimer,
+      .preliminary-quote[data-status="unavailable"] .quote-disclaimer {
+        border-top-color: rgba(130, 87, 15, 0.14);
+      }
+
+      .product-match-panel {
+        grid-column: 2 / -1;
+        min-width: 0;
+        margin-top: -2px;
+        padding: 9px 10px;
+        border-radius: var(--radius-sm);
+        color: var(--text-soft);
+        background: var(--surface-soft);
+      }
+
+      .product-match-panel p {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .product-match-panel p + p {
+        margin-top: 4px;
+      }
+
+      .product-match-panel strong {
+        color: var(--text);
+      }
+
+      .match-candidates {
+        width: 100%;
+      }
+
+      .match-candidates summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--text-soft);
+        font-size: 11px;
+        font-weight: 700;
+        list-style: none;
+        cursor: pointer;
+      }
+
+      .match-candidates summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .match-candidates summary::after {
+        content: "展开";
+        flex: 0 0 auto;
+        color: var(--accent-strong);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .match-candidates[open] summary::after {
+        content: "收起";
+      }
+
+      .candidate-list {
+        margin-top: 8px;
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .candidate-item {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+      }
+
+      .candidate-item + .candidate-item {
+        border-top: 1px solid var(--line);
+      }
+
+      .candidate-rank {
+        display: grid;
+        place-items: center;
+        width: 21px;
+        height: 21px;
+        border-radius: 7px;
+        color: var(--muted);
+        background: var(--surface);
+        font-size: 10px;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .candidate-product {
+        min-width: 0;
+      }
+
+      .candidate-code {
+        display: block;
+        overflow-wrap: anywhere;
+        color: var(--text);
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.45;
+      }
+
+      .candidate-meta {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .candidate-score {
+        color: var(--text-soft);
+        font-size: 11px;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
 
@@ -1808,6 +2128,53 @@
           display: none;
         }
 
+        .purchase-item {
+          grid-template-columns: 28px minmax(0, 1fr) 28px;
+          align-items: start;
+        }
+
+        .purchase-quantity {
+          grid-column: 2;
+          justify-content: flex-start;
+          min-width: 0;
+          margin-top: -2px;
+        }
+
+        .purchase-item > .copy-button {
+          grid-column: 3;
+          grid-row: 1;
+        }
+
+        .product-match-summary {
+          align-items: flex-start;
+        }
+
+        .product-match-summary-copy {
+          display: block;
+        }
+
+        .product-match-summary-text {
+          display: block;
+          margin-top: 2px;
+        }
+
+        .candidate-item {
+          grid-template-columns: 22px minmax(0, 1fr);
+        }
+
+        .candidate-score {
+          grid-column: 2;
+        }
+
+        .preliminary-quote {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .quote-total {
+          margin-top: 4px;
+          font-size: 19px;
+        }
+
         .extraction-card {
           padding: 17px;
         }
@@ -2266,6 +2633,7 @@
 
       const avatarColors = ["#2fa99f", "#4c8ed9", "#8b6bcf", "#d88938", "#d76067", "#3ba77b"];
       const extractionCache = new Map();
+      const draftPayloadByMailId = new Map();
       const extractionCacheEnabled = false;
       const starredMailIds = new Set();
       const deletedMailIds = new Set();
@@ -2278,6 +2646,7 @@
       let activeFolder = "inbox";
       let activeLabel = "";
       let currentExtractionRequest = 0;
+      let currentProductMatchRequest = 0;
       let toastTimer = 0;
       let bodyExpanded = false;
 
@@ -2324,6 +2693,39 @@
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;")
           .replaceAll("'", "&#39;");
+      }
+
+      function decodeMailTextEntities(value) {
+        const namedEntities = {
+          amp: "&",
+          apos: "'",
+          gt: ">",
+          lt: "<",
+          nbsp: " ",
+          quot: '"'
+        };
+        let decoded = String(value ?? "").replace(/\u00a0/g, " ");
+        for (let pass = 0; pass < 2; pass += 1) {
+          const next = decoded.replace(
+            /&(?:#(\d+)|#x([a-f0-9]+)|([a-z]+));/gi,
+            (entity, decimalCode, hexadecimalCode, namedEntity) => {
+              if (decimalCode || hexadecimalCode) {
+                const codePoint = decimalCode
+                  ? Number(decimalCode)
+                  : Number.parseInt(hexadecimalCode, 16);
+                try {
+                  return String.fromCodePoint(codePoint);
+                } catch {
+                  return entity;
+                }
+              }
+              return namedEntities[namedEntity.toLowerCase()] ?? entity;
+            }
+          );
+          decoded = next.replace(/\u00a0/g, " ");
+          if (next === decoded && !/&(?:#\d+|#x[a-f0-9]+|[a-z]+);/i.test(decoded)) break;
+        }
+        return decoded;
       }
 
       const toastIcons = {
@@ -2436,7 +2838,9 @@
       }
 
       function getMailText(mail) {
-        return [mail?.subject || "", mail?.sender || "", ...(mail?.body || [])].join(" ");
+        return decodeMailTextEntities(
+          [mail?.subject || "", mail?.sender || "", ...(mail?.body || [])].join(" ")
+        );
       }
 
       function getVisibleMails() {
@@ -2519,7 +2923,9 @@
           const category = categoryStyles[categorizeMail(mail)];
           const hasAttachments = getRealAttachments(mail).length > 0;
           const isStarred = starredMailIds.has(mail.id);
-          const preview = (mail.body || []).join(" ").replace(/\s+/g, " ").trim() || "这封邮件没有正文预览";
+          const preview = decodeMailTextEntities((mail.body || []).join(" "))
+            .replace(/\s+/g, " ")
+            .trim() || "这封邮件没有正文预览";
           return `
             <button class="mail-item${mail.id === activeMailId ? " active" : ""}" type="button" data-mail-id="${escapeHtml(mail.id)}">
               <span class="sender-avatar" style="--avatar-color: ${getAvatarColor(mail.sender)}">${escapeHtml(getInitial(mail.sender))}</span>
@@ -2583,7 +2989,8 @@
       }
 
       function renderBody(mail) {
-        const lines = mail?.body?.length ? mail.body : ["(无正文)"];
+        const lines = (mail?.body?.length ? mail.body : ["(无正文)"])
+          .map((line) => decodeMailTextEntities(line));
         elements.mailBody.innerHTML = lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
         const textLength = lines.join("").length;
         const shouldCollapse = lines.length > 9 || textLength > 900;
@@ -2641,10 +3048,16 @@
       function renderExtractionSkeleton(mode = "base") {
         elements.extractionCard.classList.remove("is-ready");
         const isLlm = mode === "llm";
-        setExtractionStatus("pending", isLlm ? "正在智能识别型号" : "正在进行基础规则提取");
-        setExtractionAction(isLlm ? "型号识别中" : "自动识别型号");
+        const isSaved = mode === "saved";
+        const loadingLabel = isSaved
+          ? "正在读取已处理结果"
+          : isLlm
+            ? "正在智能识别型号"
+            : "正在进行基础规则提取";
+        setExtractionStatus("pending", loadingLabel);
+        setExtractionAction(isSaved ? "正在读取结果" : isLlm ? "型号识别中" : "自动识别型号");
         elements.extractionResult.innerHTML = `
-          <div class="skeleton-list" aria-label="${isLlm ? "正在智能识别型号" : "正在进行基础规则提取"}">
+          <div class="skeleton-list" aria-label="${loadingLabel}">
             ${Array.from({ length: 6 }, () => '<div class="skeleton-item"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>').join("")}
           </div>`;
       }
@@ -2688,17 +3101,282 @@
           </div>`;
       }
 
-      function purchaseItemsRow(items) {
+      function getRecognitionOrderId(payload) {
+        const value = Number(payload?.persistence?.recognition_order_id);
+        return Number.isInteger(value) && value > 0 ? value : 0;
+      }
+
+      function formatMatchScore(value) {
+        const score = Number(value);
+        return Number.isFinite(score) ? Math.round(score) : 0;
+      }
+
+      function formatSpecWarning(value) {
+        const labels = {
+          thread_conflict: "螺纹规格可能冲突",
+          size_conflict: "尺寸规格可能冲突",
+          material_mismatch: "材质信息可能不一致",
+          missing_spec: "候选产品缺少部分规格"
+        };
+        return String(value || "")
+          .split(",")
+          .map((item) => labels[item] || "")
+          .filter(Boolean)
+          .join("、");
+      }
+
+      function formatReviewReason(value) {
+        const labels = {
+          duplicate_exact_match: "产品库中存在多个相同标准型号，需要人工确认",
+          fuzzy_match_requires_review: "型号相近但不完全一致，需要人工确认",
+          no_candidate_above_cutoff: "没有找到相似度足够的产品",
+          fuzzy_score_below_match_threshold: "候选产品未达到匹配阈值",
+          empty_model: "邮件中没有可用于匹配的型号"
+        };
+        return labels[String(value || "")] || "该条结果需要人工确认";
+      }
+
+      function candidateListMarkup(candidates) {
+        const rows = (Array.isArray(candidates) ? candidates : []).map((candidate) => {
+          const catalogDetails = [candidate.product_name, candidate.spec].filter(Boolean);
+          const scoreDetails = [
+            `型号相似 ${formatMatchScore(candidate.fuzzy_score)}`,
+            `规格 ${formatMatchScore(candidate.spec_score)}`
+          ];
+          const details = [...catalogDetails, ...scoreDetails].join(" · ");
+          return `
+            <div class="candidate-item">
+              <span class="candidate-rank">${escapeHtml(candidate.rank)}</span>
+              <span class="candidate-product">
+                <strong class="candidate-code">${escapeHtml(candidate.product_code || candidate.normalized_code || "未命名产品")}</strong>
+                <span class="candidate-meta">${escapeHtml(details)}</span>
+              </span>
+              <strong class="candidate-score">${formatMatchScore(candidate.final_score)} 分</strong>
+            </div>`;
+        }).join("");
+        return `<div class="candidate-list">${rows}</div>`;
+      }
+
+      function formatCurrency(value, currency = "CNY") {
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) return "待确认";
+        return new Intl.NumberFormat("zh-CN", {
+          style: "currency",
+          currency,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(amount);
+      }
+
+      function productMatchForItem(match, options = {}) {
+        if (!match) {
+          return `
+            <div class="purchase-match-line">
+              <span class="match-badge missing">暂无匹配结果</span>
+            </div>
+            <div class="product-match-panel">
+              <p>本条产品尚未生成产品库匹配结果，可点击上方“重新匹配”。</p>
+            </div>`;
+        }
+
+        const candidates = Array.isArray(match.candidates) ? match.candidates : [];
+        const topCandidate = candidates[0] || null;
+        const selectedCode = match.selected_product_code
+          || topCandidate?.product_code
+          || topCandidate?.normalized_code
+          || "";
+        const score = formatMatchScore(match.final_score);
+        const warning = formatSpecWarning(match.spec_warning);
+        const needsReview = Boolean(match.need_manual_review);
+
+        if (match.match_status === "exact_match" && !needsReview) {
+          const priceMarkup = options.showQuote && options.quoteLine
+            ? `<span class="match-price">测试单价 ${escapeHtml(formatCurrency(options.quoteLine.unit_price, options.currency))} · 小计 ${escapeHtml(formatCurrency(options.quoteLine.line_total, options.currency))}</span>`
+            : "";
+          return `
+            <div class="purchase-match-line">
+              <span class="match-badge exact">✓ 精确匹配</span>
+              <span class="match-code">产品库 <strong>${escapeHtml(selectedCode)}</strong></span>
+              <span class="match-score">${score} 分 · 自动确认</span>
+              ${priceMarkup}
+            </div>`;
+        }
+
+        const isNoMatch = match.match_status === "no_match";
+        const badgeClass = isNoMatch ? "missing" : "review";
+        const badgeLabel = isNoMatch
+          ? "未找到可靠匹配"
+          : match.match_method === "exact_duplicate"
+            ? "重复型号待确认"
+            : "模糊匹配待确认";
+        const codeLabel = selectedCode
+          ? `<span class="match-code">${isNoMatch ? "最接近" : "首选候选"} <strong>${escapeHtml(selectedCode)}</strong></span>`
+          : "";
+        const scoreLabel = score
+          ? `<span class="match-score">${score} 分</span>`
+          : "";
+        const reviewCopy = formatReviewReason(match.review_reason);
+        const warningCopy = warning ? `<p><strong>规格提示：</strong>${escapeHtml(warning)}</p>` : "";
+        const candidateDetails = candidates.length
+          ? `
+            <details class="match-candidates">
+              <summary>查看 ${candidates.length} 个产品库候选</summary>
+              ${candidateListMarkup(candidates)}
+            </details>`
+          : `<p>当前产品库中没有可展示的候选产品。</p>`;
+
+        return `
+          <div class="purchase-match-line">
+            <span class="match-badge ${badgeClass}">${escapeHtml(badgeLabel)}</span>
+            ${codeLabel}
+            ${scoreLabel}
+          </div>
+          <div class="product-match-panel">
+            <p>${escapeHtml(reviewCopy)}</p>
+            ${warningCopy}
+            ${candidateDetails}
+          </div>`;
+      }
+
+      function preliminaryQuoteSummary(options = {}) {
+        if (!options.showQuote) return "";
+        const quote = options.productMatches?.preliminary_quote;
+        if (!quote) return "";
+
+        const status = ["complete", "partial", "unavailable"].includes(quote.status)
+          ? quote.status
+          : "unavailable";
+        const pricedItems = Number(quote.priced_items) || 0;
+        const totalItems = Number(quote.total_items) || 0;
+        const unpricedItems = Number(quote.unpriced_items) || 0;
+        const isUnavailable = status === "unavailable";
+        const title = status === "complete"
+          ? "测试初步报价"
+          : status === "partial"
+            ? "测试初步报价（部分）"
+            : "测试初步报价";
+        const meta = status === "complete"
+          ? `${pricedItems}/${totalItems} 条产品已计价`
+          : status === "partial"
+            ? `${pricedItems}/${totalItems} 条产品已计价，还有 ${unpricedItems} 条待确认`
+            : `${totalItems || unpricedItems} 条产品暂未满足自动报价条件`;
+        const totalLabel = isUnavailable
+          ? "待确认"
+          : formatCurrency(quote.total_amount, quote.currency);
+
+        return `
+          <div class="preliminary-quote" data-status="${status}">
+            <span class="quote-copy">
+              <strong class="quote-title">${escapeHtml(title)}</strong>
+              <span class="quote-meta">${escapeHtml(meta)}</span>
+            </span>
+            <strong class="quote-total">${escapeHtml(totalLabel)}</strong>
+            <p class="quote-disclaimer">${escapeHtml(quote.disclaimer || "测试价格，未含税费及运费，正式报价需人工确认")}</p>
+          </div>`;
+      }
+
+      function matchRefreshButton(recognitionOrderId, mailId, loading = false) {
+        if (!recognitionOrderId) return "";
+        return `
+          <button
+            class="match-refresh-button"
+            type="button"
+            data-rematch-order-id="${recognitionOrderId}"
+            data-rematch-mail-id="${escapeHtml(mailId)}"
+            ${loading ? "disabled" : ""}
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+              <path d="M20 5v6h-6"></path>
+            </svg>
+            <span>${loading ? "匹配中" : "重新匹配"}</span>
+          </button>`;
+      }
+
+      function productMatchSummary(options = {}) {
+        const state = options.matchingState || "";
+        if (!state) return "";
+
+        const recognitionOrderId = Number(options.recognitionOrderId) || 0;
+        const mailId = String(options.mailId || "");
+        if (state === "loading") {
+          return `
+            <div class="product-match-summary" data-state="loading">
+              <span class="product-match-summary-copy">
+                <strong class="product-match-summary-title">正在匹配产品库</strong>
+                <span class="product-match-summary-text">识别结果已保留，正在读取对应产品</span>
+              </span>
+              ${matchRefreshButton(recognitionOrderId, mailId, true)}
+            </div>`;
+        }
+        if (state === "error") {
+          return `
+            <div class="product-match-summary" data-state="error">
+              <span class="product-match-summary-copy">
+                <strong class="product-match-summary-title">匹配结果暂不可用</strong>
+                <span class="product-match-summary-text">${escapeHtml(options.matchingError || "不影响已经识别出的订单型号")}</span>
+              </span>
+              ${matchRefreshButton(recognitionOrderId, mailId)}
+            </div>`;
+        }
+        if (state === "unavailable") {
+          return `
+            <div class="product-match-summary" data-state="warning">
+              <span class="product-match-summary-copy">
+                <strong class="product-match-summary-title">尚未生成产品匹配</strong>
+                <span class="product-match-summary-text">订单识别结果未保存，暂时无法查询产品库</span>
+              </span>
+            </div>`;
+        }
+
+        const summary = options.productMatches?.summary || {};
+        const exact = Number(summary.exact_match) || 0;
+        const fuzzy = Number(summary.fuzzy_match) || 0;
+        const noMatch = Number(summary.no_match) || 0;
+        const manual = Number(summary.need_manual_review) || 0;
+        const tone = noMatch ? "error" : manual ? "warning" : "success";
+        const title = noMatch
+          ? "存在未匹配产品"
+          : manual
+            ? "存在待复核产品"
+            : "产品匹配完成";
+        return `
+          <div class="product-match-summary" data-state="${tone}">
+            <span class="product-match-summary-copy">
+              <strong class="product-match-summary-title">${title}</strong>
+              <span class="product-match-summary-text">精确 ${exact} · 模糊 ${fuzzy} · 待复核 ${manual} · 未匹配 ${noMatch}</span>
+            </span>
+            ${matchRefreshButton(recognitionOrderId, mailId)}
+          </div>`;
+      }
+
+      function purchaseItemsRow(items, options = {}) {
         const normalizedItems = items.length
           ? items
-          : [{ model: "暂未识别到明确型号", name: "", quantity: null, unit: "" }];
+          : [{ lineNo: 1, model: "暂未识别到明确型号", name: "", quantity: null, unit: "" }];
         const countLabel = items.length ? `${items.length} 个采购项` : "待确认";
+        const matchItemsByLine = new Map(
+          (options.productMatches?.items || []).map((item) => [Number(item.line_no), item])
+        );
+        const quote = options.productMatches?.preliminary_quote;
+        const quoteLinesByLine = new Map(
+          (quote?.lines || []).map((line) => [Number(line.line_no), line])
+        );
         const itemRows = normalizedItems.map((item, index) => {
           const model = item.model || item.name || "未识别产品";
           const secondaryName = item.model && item.name && item.name !== item.model ? item.name : "";
           const hasQuantity = item.quantity !== null && item.quantity !== undefined && item.quantity !== "";
           const quantity = hasQuantity ? String(item.quantity) : "待确认";
           const unit = hasQuantity ? (item.unit || "") : "";
+          const lineNo = Number(item.lineNo) || index + 1;
+          const matchItem = matchItemsByLine.get(lineNo);
+          const itemMatchHtml = options.matchingState === "ready"
+            ? productMatchForItem(matchItem?.match, {
+                showQuote: options.showQuote,
+                quoteLine: quoteLinesByLine.get(lineNo),
+                currency: quote?.currency || "CNY"
+              })
+            : "";
           const copyValue = [model, secondaryName, hasQuantity ? `${quantity}${unit ? ` ${unit}` : ""}` : "数量待确认"]
             .filter(Boolean)
             .join(" · ");
@@ -2718,6 +3396,7 @@
                   <rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V5H5v11h3"></path>
                 </svg>
               </button>
+              ${itemMatchHtml}
             </div>`;
         }).join("");
         return `
@@ -2728,7 +3407,9 @@
                 <span class="result-label">采购产品</span>
                 <span class="purchase-count">${countLabel}</span>
               </span>
+              ${productMatchSummary(options)}
               <div class="purchase-list">${itemRows}</div>
+              ${preliminaryQuoteSummary(options)}
             </div>
           </div>`;
       }
@@ -2776,19 +3457,25 @@
         const isPartial = options.partial || payload.status === "partial_success";
         const isFastPath = payload.provider === "local_structured"
           || payload.processing?.mode === "structured_fast_path";
+        const isSavedResult = payload.provider === "saved_recognition"
+          || payload.processing?.mode === "saved_result";
         const isCacheHit = payload.processing?.cache_hit === true;
-        const completedSourceLabel = isCacheHit
+        const completedSourceLabel = isSavedResult
+          ? "已处理结果已载入"
+          : isCacheHit
           ? "已复用识别结果"
           : isFastPath
             ? "本地快速识别完成"
             : "DeepSeek 识别完成";
         const products = (draft.products || []).slice(0, 10);
-        const purchaseItems = products.map((item) => ({
+        const purchaseItems = products.map((item, index) => ({
+          lineNo: Number(item.line_no) || index + 1,
           model: item.product_model || "",
           name: item.product_name || "",
           quantity: item.quantity ?? null,
           unit: item.unit || ""
         }));
+        const recognitionOrderId = options.recognitionOrderId || getRecognitionOrderId(payload);
         const requirements = draft.requirements || {};
         const attachments = getRealAttachments(mail).map((item) => item.name);
         const requirementTags = [
@@ -2802,7 +3489,14 @@
           resultRow({ icon: "user", label: "客户", value: requirements.company || getDisplayName(mail.sender) }),
           resultRow({ icon: "package", label: "产品类别", value: draft.product_type?.label || "待确认" }),
           resultRow({ icon: "calendar", label: "交期", value: requirements.delivery_date || "邮件未说明" }),
-          purchaseItemsRow(purchaseItems),
+          purchaseItemsRow(purchaseItems, {
+            matchingState: options.matchingState,
+            matchingError: options.matchingError,
+            productMatches: options.productMatches,
+            recognitionOrderId,
+            mailId: mail.id,
+            showQuote: isSavedResult
+          }),
           resultRow({ icon: "user", label: "联系人", value: requirements.contact_person || getDisplayName(mail.sender), wide: true }),
           resultRow({ icon: "flag", label: "重点要求", tags: requirementTags.length ? requirementTags : ["未发现额外要求"], wide: true })
         ];
@@ -2844,6 +3538,161 @@
         elements.extractionResult.querySelectorAll("[data-copy]").forEach((button) => {
           button.addEventListener("click", () => copyText(button.dataset.copy));
         });
+        elements.extractionResult.querySelectorAll("[data-rematch-order-id]").forEach((button) => {
+          button.addEventListener("click", () => rematchProducts(button));
+        });
+      }
+
+      function renderDraftMatchState(mail, payload, matchingState, options = {}) {
+        return renderDraftResult(mail, payload, {
+          partial: payload.status === "partial_success",
+          recognitionOrderId: getRecognitionOrderId(payload),
+          matchingState,
+          productMatches: options.productMatches,
+          matchingError: options.matchingError
+        });
+      }
+
+      function productMatchToast(result) {
+        const summary = result?.summary || {};
+        const manual = Number(summary.need_manual_review) || 0;
+        const noMatch = Number(summary.no_match) || 0;
+        if (noMatch) {
+          return {
+            message: `产品匹配完成：${noMatch} 条未匹配，建议人工处理`,
+            tone: "warning"
+          };
+        }
+        if (manual) {
+          return {
+            message: `产品匹配完成：${manual} 条需要人工复核`,
+            tone: "warning"
+          };
+        }
+        return {
+          message: `产品匹配完成：${Number(summary.exact_match) || 0} 条精确匹配`,
+          tone: "success"
+        };
+      }
+
+      function canAutoProcessAfterMatching(result) {
+        const totalItems = Number(result?.total_items) || 0;
+        const summary = result?.summary || {};
+        const exactMatches = Number(summary.exact_match) || 0;
+        const fuzzyMatches = Number(summary.fuzzy_match) || 0;
+        const noMatches = Number(summary.no_match) || 0;
+        const manualReviews = Number(summary.need_manual_review) || 0;
+        return totalItems > 0
+          && exactMatches === totalItems
+          && fuzzyMatches === 0
+          && noMatches === 0
+          && manualReviews === 0;
+      }
+
+      function updateProcessingAfterRecognition(mail, result) {
+        if (!mail || mail.id !== activeMailId) return;
+        const summary = result?.summary || {};
+        const fuzzyMatches = Number(summary.fuzzy_match) || 0;
+        const noMatches = Number(summary.no_match) || 0;
+
+        if (!canAutoProcessAfterMatching(result)) {
+          const wasProcessed = processedMailIds.delete(mail.id);
+          if (wasProcessed) {
+            persistMailStatus();
+            updateProcessedState();
+            renderList();
+          }
+          const locationCopy = wasProcessed ? "已移回未处理" : "已保留在未处理";
+          if (fuzzyMatches) {
+            showToast(`存在 ${fuzzyMatches} 条模糊匹配，邮件${locationCopy}`, "warning");
+          } else if (noMatches) {
+            showToast(`存在 ${noMatches} 条未匹配产品，邮件${locationCopy}`, "warning");
+          } else {
+            showToast(`产品匹配仍需人工确认，邮件${locationCopy}`, "warning");
+          }
+          return;
+        }
+
+        const wasProcessed = processedMailIds.has(mail.id);
+        processedMailIds.add(mail.id);
+        newMailIds.delete(mail.id);
+        persistMailStatus();
+        updateProcessedState();
+        renderList();
+        showToast(
+          wasProcessed
+            ? "智能识别和产品匹配已完成，邮件保持为已处理"
+            : "智能识别和产品匹配已完成，邮件已自动标记为已处理",
+          "success"
+        );
+      }
+
+      async function loadProductMatches(mail, payload, extractionRequestId) {
+        const recognitionOrderId = getRecognitionOrderId(payload);
+        if (!recognitionOrderId) return;
+        if (payload.persistence?.product_matching?.status === "failed") {
+          if (extractionRequestId === currentExtractionRequest && mail.id === activeMailId) {
+            renderDraftMatchState(mail, payload, "error", {
+              matchingError: "订单已经保存，但本次产品匹配没有完成"
+            });
+          }
+          return;
+        }
+
+        const matchRequestId = ++currentProductMatchRequest;
+        try {
+          const response = await fetch(`/api/order-recognitions/${recognitionOrderId}/product-matches`);
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "产品匹配结果加载失败");
+          if (
+            matchRequestId !== currentProductMatchRequest
+            || extractionRequestId !== currentExtractionRequest
+            || mail.id !== activeMailId
+          ) return;
+          renderDraftMatchState(mail, payload, "ready", { productMatches: result });
+          updateProcessingAfterRecognition(mail, result);
+        } catch (error) {
+          if (
+            matchRequestId !== currentProductMatchRequest
+            || extractionRequestId !== currentExtractionRequest
+            || mail.id !== activeMailId
+          ) return;
+          renderDraftMatchState(mail, payload, "error", {
+            matchingError: error.message || "不影响已经识别出的订单型号"
+          });
+          showToast("型号识别已完成，但产品匹配结果暂时无法加载", "warning");
+        }
+      }
+
+      async function rematchProducts(button) {
+        const recognitionOrderId = Number(button.dataset.rematchOrderId);
+        const mailId = button.dataset.rematchMailId || "";
+        const mail = getActiveMail();
+        const payload = draftPayloadByMailId.get(mailId);
+        if (!recognitionOrderId || !mail || mail.id !== mailId || !payload) {
+          showToast("当前订单信息已变化，请重新识别型号后再匹配", "warning");
+          return;
+        }
+
+        const matchRequestId = ++currentProductMatchRequest;
+        renderDraftMatchState(mail, payload, "loading");
+        try {
+          const response = await fetch(`/api/order-recognitions/${recognitionOrderId}/product-matches`, {
+            method: "POST"
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "重新匹配失败");
+          if (matchRequestId !== currentProductMatchRequest || mail.id !== activeMailId) return;
+          renderDraftMatchState(mail, payload, "ready", { productMatches: result });
+          const feedback = productMatchToast(result);
+          showToast(feedback.message, feedback.tone);
+        } catch (error) {
+          if (matchRequestId !== currentProductMatchRequest || mail.id !== activeMailId) return;
+          renderDraftMatchState(mail, payload, "error", {
+            matchingError: error.message || "重新匹配失败"
+          });
+          showToast(error.message || "重新匹配失败，请稍后重试", "error");
+        }
       }
 
       function renderExtractionError(mode = "base") {
@@ -2869,9 +3718,116 @@
         }
       }
 
+      function buildSavedRecognitionPayload(mail, recognition, productMatches) {
+        const requirements = recognition?.requirements || {};
+        const category = categoryStyles[categorizeMail(mail)];
+        return {
+          status: "success",
+          provider: "saved_recognition",
+          processing: {
+            mode: "saved_result",
+            cache_hit: false
+          },
+          order_draft: {
+            email_id: recognition.email_id,
+            business_type: {
+              code: category?.code || "",
+              label: category?.label || "待确认"
+            },
+            product_type: {
+              code: "recognized_products",
+              label: "已识别产品"
+            },
+            requirements,
+            products: (recognition.items || []).map((item) => ({
+              line_no: item.line_no,
+              product_model: item.model_raw,
+              product_name: "",
+              quantity: item.quantity,
+              unit: item.unit,
+              confidence: item.confidence
+            })),
+            missing_fields: []
+          },
+          persistence: {
+            status: "saved",
+            recognition_order_id: recognition.id,
+            product_matching: {
+              status: "matched",
+              summary: productMatches?.summary || {}
+            }
+          }
+        };
+      }
+
+      function renderSavedResultUnavailable({ error = false, message = "" } = {}) {
+        setExtractionStatus(
+          error ? "error" : "warning",
+          error ? "已处理结果读取失败" : "暂无已保存的识别结果"
+        );
+        setExtractionAction("智能识别型号");
+        elements.extractionResult.innerHTML = `
+          <div class="result-empty">
+            <div>
+              <div class="empty-illustration" aria-hidden="true">${iconMarkup("note")}</div>
+              <strong>${error ? "暂时无法读取匹配结果" : "这封邮件还没有订单匹配结果"}</strong>
+              <p>${escapeHtml(message || (error
+                ? "请稍后重试，或点击“智能识别型号”重新生成结果。"
+                : "它可能是手动标记为已处理的邮件。点击“智能识别型号”即可生成订单和产品匹配结果。"))}</p>
+            </div>
+          </div>`;
+      }
+
+      async function loadSavedOrderResult(mail) {
+        if (!mail) return;
+        const requestId = ++currentExtractionRequest;
+        currentProductMatchRequest += 1;
+        renderExtractionSkeleton("saved");
+        elements.refreshExtractionButton.disabled = true;
+        try {
+          const response = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/order-result`);
+          const result = await response.json();
+          if (
+            requestId !== currentExtractionRequest
+            || mail.id !== activeMailId
+          ) return;
+          if (response.status === 404) {
+            renderSavedResultUnavailable();
+            return;
+          }
+          if (!response.ok) {
+            throw new Error(result.error || "已处理结果读取失败");
+          }
+
+          const payload = buildSavedRecognitionPayload(
+            mail,
+            result.recognition,
+            result.product_matches
+          );
+          draftPayloadByMailId.set(mail.id, payload);
+          renderDraftMatchState(mail, payload, "ready", {
+            productMatches: result.product_matches
+          });
+        } catch (error) {
+          if (
+            requestId !== currentExtractionRequest
+            || mail.id !== activeMailId
+          ) return;
+          renderSavedResultUnavailable({
+            error: true,
+            message: error.message || "请稍后重试"
+          });
+        } finally {
+          if (requestId === currentExtractionRequest) {
+            elements.refreshExtractionButton.disabled = false;
+          }
+        }
+      }
+
       async function loadExtraction(mail, options = {}) {
         if (!mail) return;
         const requestId = ++currentExtractionRequest;
+        currentProductMatchRequest += 1;
         const cached = extractionCacheEnabled ? extractionCache.get(mail.id) : null;
         if (!options.force && cached) {
           if (cached.kind === "draft") renderDraftResult(mail, cached.payload, { partial: cached.payload.status === "partial_success" });
@@ -2896,7 +3852,17 @@
             const isFastPath = payload.provider === "local_structured"
               || payload.processing?.mode === "structured_fast_path";
             const isCacheHit = payload.processing?.cache_hit === true;
-            const recognizedModelCount = renderDraftResult(mail, payload, { partial: isPartial });
+            const recognitionOrderId = getRecognitionOrderId(payload);
+            const matchingFailed = payload.persistence?.product_matching?.status === "failed";
+            draftPayloadByMailId.set(mail.id, payload);
+            const recognizedModelCount = renderDraftMatchState(
+              mail,
+              payload,
+              matchingFailed ? "error" : recognitionOrderId ? "loading" : "unavailable",
+              matchingFailed
+                ? { matchingError: "订单已经保存，但本次产品匹配没有完成" }
+                : {}
+            );
             showToast(
               recognizedModelCount
                 ? isPartial
@@ -2909,6 +3875,9 @@
                 : "智能识别完成，但未识别到明确型号",
               recognizedModelCount && !isPartial ? "success" : "warning"
             );
+            if (recognitionOrderId && !matchingFailed) {
+              await loadProductMatches(mail, payload, requestId);
+            }
           } else if (options.deep) {
             const fallbackResponse = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/analyze-order`, { method: "POST" });
             const fallback = await fallbackResponse.json();
@@ -2943,7 +3912,11 @@
         renderReader(mail);
         if (mail) {
           elements.body.classList.add("mail-open");
-          loadExtraction(mail);
+          if (processedMailIds.has(mail.id)) {
+            loadSavedOrderResult(mail);
+          } else {
+            loadExtraction(mail);
+          }
         } else {
           elements.body.classList.remove("mail-open");
         }
@@ -3038,7 +4011,7 @@
           elements.composeText.value = "\n\n";
         } else if (mode === "forward" && mail) {
           elements.composeSubject.value = /^(fw|fwd|转发)[:：]/i.test(mail.subject || "") ? mail.subject : `转发：${mail.subject || ""}`;
-          elements.composeText.value = `\n\n---------- 转发邮件 ----------\n发件人：${mail.sender || ""}\n时间：${formatDisplayTime(mail.time)}\n主题：${mail.subject || ""}\n\n${(mail.body || []).join("\n")}`;
+          elements.composeText.value = `\n\n---------- 转发邮件 ----------\n发件人：${mail.sender || ""}\n时间：${formatDisplayTime(mail.time)}\n主题：${mail.subject || ""}\n\n${decodeMailTextEntities((mail.body || []).join("\n"))}`;
         }
         showDialog(elements.composeDialog);
         window.setTimeout(() => (mode === "forward" ? elements.composeTo : mode === "reply" ? elements.composeText : elements.composeTo).focus(), 60);

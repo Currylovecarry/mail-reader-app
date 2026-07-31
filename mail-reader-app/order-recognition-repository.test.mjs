@@ -31,6 +31,7 @@ try {
   assert.equal(saved.email_id, "mail_001");
   assert.equal(saved.items.length, 2);
   assert.equal(saved.items[0].model_normalized, "GN425.1NI12");
+  assert.equal(saved.items[1].model_normalized, "GN136-NI-40-40-B-0-FREE");
   assert.equal(saved.requirements.delivery_terms, "EXW");
 
   const updated = await repository.saveOrderDraft({
@@ -41,7 +42,40 @@ try {
   assert.equal(updated.id, saved.id);
   assert.equal(updated.items.length, 1);
   assert.equal(updated.items[0].model_raw, "GN 5334.4-80-M10");
-  assert.equal((await repository.listOrderRecognitions()).length, 1);
+  const loadedByEmailId = await repository.getOrderRecognitionByEmailId("mail_001");
+  assert.equal(loadedByEmailId.id, saved.id);
+  assert.equal(loadedByEmailId.items[0].model_normalized, "GN5334.4-80-M10");
+  assert.equal(await repository.getOrderRecognitionByEmailId("missing_mail"), null);
+
+  const duplicateLines = await repository.saveOrderDraft({
+    email_id: "mail_duplicate_lines",
+    requirements: { company: "混合附件客户" },
+    products: [
+      { line_no: 1, product_model: "AX-100", quantity: 12, unit: "件", confidence: 0.95 },
+      { line_no: 2, product_model: "AX-200", quantity: 8, unit: "个", confidence: 0.95 },
+      { line_no: 1, product_model: "", quantity: null, unit: "个", confidence: 0.65 },
+      { line_no: 2, product_model: "", quantity: null, unit: "件", confidence: 0.65 }
+    ]
+  });
+
+  assert.equal(duplicateLines.items.length, 4);
+  assert.deepEqual(
+    duplicateLines.items.map((item) => item.line_no),
+    [1, 2, 3, 4]
+  );
+
+  const normalizationCases = await repository.saveOrderDraft({
+    email_id: "mail_normalization_cases",
+    requirements: {},
+    products: [
+      { product_model: "GN675–50—M8", quantity: 1, unit: "件", confidence: 0.9 },
+      { product_model: "A-2024/88", quantity: 1, unit: "件", confidence: 0.9 }
+    ]
+  });
+
+  assert.equal(normalizationCases.items[0].model_normalized, "GN675-50-M8");
+  assert.equal(normalizationCases.items[1].model_normalized, "A-202488");
+  assert.equal((await repository.listOrderRecognitions()).length, 3);
 } finally {
   repository.close();
   await fs.rm(temporaryDirectory, { recursive: true, force: true });

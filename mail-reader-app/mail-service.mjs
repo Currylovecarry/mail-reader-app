@@ -4,6 +4,7 @@ import net from "node:net";
 import path from "node:path";
 import tls from "node:tls";
 import { fileURLToPath } from "node:url";
+import { decodeHtmlEntities } from "./html-entities.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -263,16 +264,6 @@ function pickObjectData(payload) {
   return payload && typeof payload === "object" ? payload : {};
 }
 
-function decodeHtmlEntities(value) {
-  return String(value || "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'");
-}
-
 function stripHtml(html) {
   return decodeHtmlEntities(
     String(html || "")
@@ -289,7 +280,7 @@ function stripHtml(html) {
 }
 
 function splitPlainText(text) {
-  return String(text || "")
+  return decodeHtmlEntities(text)
     .replace(/\r/g, "")
     .split("\n")
     .map((line) => line.trim())

@@ -48,7 +48,7 @@ IMAP mode reads `INBOX` by default, fetches and retains up to 50 recent mails, s
 
 When `POST /api/mail/:emailId/generate-order-draft` succeeds, the recognized order is saved to the local SQLite file `data/order-recognition.db`. It stores the order's key requirements and its recognized model, quantity, unit, and confidence values. Re-generating the same email replaces its previous items rather than creating duplicates.
 
-For speed, complete high-confidence spreadsheet/table rows are converted locally without an LLM call. Ambiguous body text, images, PDFs, and incomplete tables continue through the configured DeepSeek model. `LLM_TIMEOUT_MS` limits remote model waits and defaults to 30 seconds.
+For speed, complete high-confidence spreadsheet/table rows are converted locally without an LLM call. Ambiguous body text, images, PDFs, and incomplete tables continue through the configured DeepSeek model. `LLM_TIMEOUT_MS` limits remote model waits and defaults to 120 seconds. DeepSeek requests explicitly disable thinking mode by default for low-latency order parsing; set `LLM_THINKING_ENABLED=true` when deeper reasoning is preferred over response speed.
 
 Set `ORDER_DRAFT_CACHE_ENABLED=false` during benchmarking so every request runs independently. When set to `true`, successful responses are cached in memory by mail content and model configuration (up to 100 entries), and concurrent requests for the same mail share one generation.
 
@@ -58,6 +58,22 @@ Matching services can read the intermediate records through:
 - `GET /api/order-recognitions/:id`
 
 Each item exposes both `model_raw` and `model_normalized`; matching logic should use the latter as its stable input while retaining the former for display and review.
+
+## Product Matching
+
+Product matching compares `recognition_order_items.model_normalized` with
+`test_product_catalog.normalized_code`. Exact matches are auto-confirmed.
+Non-exact models use partial-ratio Top-3 matching plus specification conflict
+checks and remain pending for manual review. Weak candidates are recorded as
+`no_match` rather than being forced to a product.
+
+- `POST /api/order-recognitions/:id/product-matches` reruns and saves matches.
+- `GET /api/order-recognitions/:id/product-matches` returns saved results and candidates.
+
+Newly generated order drafts are matched automatically after their recognition
+items are saved. The current `test_product_catalog` is derived from historical
+recognition data for integration testing and must not be treated as the official
+business product master.
 
 ## Send Mail
 

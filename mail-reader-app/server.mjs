@@ -17,6 +17,7 @@ import { extractEmailContent } from "./content-extractor.mjs";
 import { analyzeOrderContent } from "./order-analysis-service.mjs";
 import { generateOrderDraft } from "./llm-order-draft-service.mjs";
 import { orderRecognitionRepository } from "./order-recognition-repository.mjs";
+import { productMatchingService } from "./product-matching-service.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,6 +82,19 @@ async function generateAndPersistOrderDraft(mail) {
       result_status: payload.status,
       recognition_order_id: record.id
     };
+    try {
+      const matches = await productMatchingService.matchOrderRecognition(record.id);
+      payload.persistence.product_matching = {
+        status: "matched",
+        summary: matches.summary
+      };
+    } catch (error) {
+      console.error(`[product-matching] recognition_order_id=${record.id} error=${sanitizeError(error)}`);
+      payload.persistence.product_matching = {
+        status: "failed",
+        error: sanitizeError(error)
+      };
+    }
   }
   return payload;
 }
@@ -161,6 +175,7 @@ function findStoredMail(stored, emailId) {
 await loadDotEnv();
 await ensureStorage();
 await orderRecognitionRepository.ensureStorage();
+await productMatchingService.ensureStorage();
 
 const server = createServer(async (request, response) => {
   try {
@@ -190,9 +205,51 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    const savedOrderResultMatch = url.pathname.match(/^\/api\/mail\/(.+)\/order-result$/);
+    if (request.method === "GET" && savedOrderResultMatch) {
+      const emailId = decodeURIComponent(savedOrderResultMatch[1] || "");
+      const recognition = await orderRecognitionRepository.getOrderRecognitionByEmailId(emailId);
+      if (!recognition) {
+        sendJson(response, 404, { error: "这封邮件没有已保存的订单识别结果" });
+        return;
+      }
+      const productMatches = await productMatchingService.getOrderMatches(recognition.id);
+      sendJson(response, 200, {
+        recognition,
+        product_matches: productMatches
+      });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/order-recognitions") {
       const records = await orderRecognitionRepository.listOrderRecognitions();
       sendJson(response, 200, { records });
+      return;
+    }
+
+    const productMatchesMatch = url.pathname.match(
+      /^\/api\/order-recognitions\/(\d+)\/product-matches$/
+    );
+    if (request.method === "GET" && productMatchesMatch) {
+      const result = await productMatchingService.getOrderMatches(
+        Number(productMatchesMatch[1])
+      );
+      if (!result) {
+        sendJson(response, 404, { error: "订单识别结果不存在" });
+        return;
+      }
+      sendJson(response, 200, result);
+      return;
+    }
+    if (request.method === "POST" && productMatchesMatch) {
+      const result = await productMatchingService.matchOrderRecognition(
+        Number(productMatchesMatch[1])
+      );
+      if (!result) {
+        sendJson(response, 404, { error: "订单识别结果不存在" });
+        return;
+      }
+      sendJson(response, 200, result);
       return;
     }
 

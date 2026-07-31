@@ -348,4 +348,118 @@ assert.equal(partialResult.error, "");
 assert.ok(partialResult.partial_reasons.includes("业务类型待人工确认"));
 assert.ok(partialResult.plain_summary.includes("业务类型还需要进一步确认"));
 
+const mixedAttachmentResult = await generateOrderDraft({
+  email_id: "mail_mixed_attachment_lines",
+  subject: "混合附件产品询价",
+  from: "customer@example.com",
+  content_blocks: [
+    {
+      type: "spreadsheet",
+      source: "products.xlsx#Sheet1",
+      text: "",
+      rows: [
+        { "序号": "1", "产品型号": "AX-100", "产品名称": "锁紧销", "数量": "12", "单位": "件" },
+        { "序号": "2", "产品型号": "AX-200", "产品名称": "铰链", "数量": "8", "单位": "个" }
+      ],
+      confidence: 0.95,
+      metadata: {}
+    },
+    {
+      type: "image_ocr",
+      source: "installation.png",
+      text: "",
+      rows: [
+        { "序号": "1", "产品名称": "铰 链", "单位": "个" },
+        { "序号": "2", "产品名称": "安装支架", "单位": "件" }
+      ],
+      confidence: 0.88,
+      metadata: {}
+    }
+  ]
+}, {
+  invokeLlm: async () => JSON.stringify({
+    status: "success",
+    order_draft: {
+      email_id: "mail_mixed_attachment_lines",
+      business_type: { code: "BT1", label: "初次询盘", confidence: 0.9, reason: "请求产品报价" },
+      product_type: { code: "PT2", label: "定制品", confidence: 0.85, reason: "包含安装要求" },
+      products: [],
+      requirements: {},
+      warnings: [],
+      evidence: {}
+    }
+  })
+});
+
+assert.equal(mixedAttachmentResult.status, "success");
+assert.deepEqual(
+  mixedAttachmentResult.order_draft.products.map((product) => product.line_no),
+  [1, 2, 3, 4]
+);
+assert.equal(
+  new Set(mixedAttachmentResult.order_draft.products.map((product) => product.line_no)).size,
+  mixedAttachmentResult.order_draft.products.length
+);
+assert.ok(
+  mixedAttachmentResult.order_draft.warnings.includes(
+    "检测到跨来源产品行号重复，已按合并结果重新编号"
+  )
+);
+
+const originalFetch = globalThis.fetch;
+const originalAbortSignalTimeout = AbortSignal.timeout;
+const originalLlmEnvironment = {
+  LLM_BASE_URL: process.env.LLM_BASE_URL,
+  LLM_MODEL: process.env.LLM_MODEL,
+  LLM_API_KEY: process.env.LLM_API_KEY,
+  LLM_TIMEOUT_MS: process.env.LLM_TIMEOUT_MS,
+  LLM_THINKING_ENABLED: process.env.LLM_THINKING_ENABLED
+};
+const capturedRequests = [];
+const capturedTimeouts = [];
+
+try {
+  process.env.LLM_BASE_URL = "https://api.deepseek.com";
+  process.env.LLM_MODEL = "deepseek-v4-flash";
+  process.env.LLM_API_KEY = "test-api-key";
+  delete process.env.LLM_TIMEOUT_MS;
+  delete process.env.LLM_THINKING_ENABLED;
+
+  AbortSignal.timeout = (delay) => {
+    capturedTimeouts.push(delay);
+    return new AbortController().signal;
+  };
+  globalThis.fetch = async (url, init) => {
+    capturedRequests.push({ url, body: JSON.parse(init.body) });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify(mockLlmResponse) } }]
+      })
+    };
+  };
+
+  const defaultConfigResult = await generateOrderDraft(extractedContent, { forceLlm: true });
+  assert.equal(defaultConfigResult.status, "success");
+  assert.equal(capturedTimeouts[0], 120_000);
+  assert.equal(capturedRequests[0].url, "https://api.deepseek.com/chat/completions");
+  assert.deepEqual(capturedRequests[0].body.thinking, { type: "disabled" });
+
+  process.env.LLM_THINKING_ENABLED = "true";
+  const thinkingEnabledResult = await generateOrderDraft(extractedContent, { forceLlm: true });
+  assert.equal(thinkingEnabledResult.status, "success");
+  assert.deepEqual(capturedRequests[1].body.thinking, { type: "enabled" });
+} finally {
+  globalThis.fetch = originalFetch;
+  AbortSignal.timeout = originalAbortSignalTimeout;
+  Object.entries(originalLlmEnvironment).forEach(([key, value]) => {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  });
+}
+
 console.log("llm-order-draft-service test passed");

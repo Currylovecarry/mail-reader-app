@@ -137,6 +137,14 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
     return order ? hydrateOrder(order) : null;
   }
 
+  async function getOrderRecognitionByEmailId(emailId) {
+    await ensureStorage();
+    const order = database.prepare(
+      "SELECT * FROM recognition_orders WHERE email_id = ?"
+    ).get(String(emailId || "").trim());
+    return order ? hydrateOrder(order) : null;
+  }
+
   function hydrateOrder(order) {
     const items = database.prepare(`
       SELECT line_no, model_raw, model_normalized, quantity, unit, confidence
@@ -181,6 +189,7 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
     saveOrderDraft,
     listOrderRecognitions,
     getOrderRecognition,
+    getOrderRecognitionByEmailId,
     close
   };
 }
@@ -188,6 +197,14 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
 function normalizeOrderDraft(orderDraft) {
   const requirements = orderDraft?.requirements || {};
   const items = Array.isArray(orderDraft?.products) ? orderDraft.products : [];
+  const normalizedItems = items.map((item, index) => ({
+    lineNo: positiveInteger(item?.line_no) || index + 1,
+    modelRaw: cleanText(item?.product_model),
+    modelNormalized: normalizeModel(item?.product_model),
+    quantity: nullableNumber(item?.quantity),
+    unit: cleanText(item?.unit),
+    confidence: clampConfidence(item?.confidence)
+  })).filter((item) => item.modelRaw || item.quantity !== null || item.unit);
 
   return {
     emailId: String(orderDraft?.email_id || "").trim(),
@@ -201,23 +218,36 @@ function normalizeOrderDraft(orderDraft) {
       destination: cleanText(requirements.destination),
       paymentTerms: cleanText(requirements.payment_terms)
     },
-    items: items.map((item, index) => ({
-      lineNo: positiveInteger(item?.line_no) || index + 1,
-      modelRaw: cleanText(item?.product_model),
-      modelNormalized: normalizeModel(item?.product_model),
-      quantity: nullableNumber(item?.quantity),
-      unit: cleanText(item?.unit),
-      confidence: clampConfidence(item?.confidence)
-    })).filter((item) => item.modelRaw || item.quantity !== null || item.unit)
+    items: ensureUniqueItemLineNumbers(normalizedItems)
   };
+}
+
+function ensureUniqueItemLineNumbers(items) {
+  const seen = new Set();
+  const hasDuplicate = items.some((item) => {
+    if (seen.has(item.lineNo)) {
+      return true;
+    }
+    seen.add(item.lineNo);
+    return false;
+  });
+
+  return hasDuplicate
+    ? items.map((item, index) => ({ ...item, lineNo: index + 1 }))
+    : items;
 }
 
 function cleanText(value) {
   return String(value || "").trim();
 }
 
-function normalizeModel(value) {
-  return cleanText(value).toUpperCase().replace(/\s+/g, "");
+export function normalizeModel(value) {
+  return cleanText(value)
+    .toUpperCase()
+    .replace(/_/g, "-")
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9.-]/g, "");
 }
 
 function nullableNumber(value) {

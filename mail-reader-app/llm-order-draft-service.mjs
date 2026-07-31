@@ -144,6 +144,9 @@ async function invokeOpenAiCompatibleLlm(prompt) {
       model: config.model,
       temperature: 0.1,
       ...(config.useJsonMode ? { response_format: { type: "json_object" } } : {}),
+      ...(config.isDeepSeek
+        ? { thinking: { type: config.thinkingEnabled ? "enabled" : "disabled" } }
+        : {}),
       messages: [
         { role: "system", content: prompt.system },
         { role: "user", content: prompt.user }
@@ -168,12 +171,17 @@ async function invokeOpenAiCompatibleLlm(prompt) {
 
 function getLlmConfig() {
   const baseUrl = String(process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+  const isDeepSeek = /api\.deepseek\.com(?:\/v1)?$/i.test(baseUrl);
   return {
     baseUrl,
     model: process.env.LLM_MODEL || "gpt-4o-mini",
     apiKey: process.env.LLM_API_KEY || "",
-    timeoutMs: clampTimeout(process.env.LLM_TIMEOUT_MS, 30_000),
-    useJsonMode: /api\.deepseek\.com(?:\/v1)?$/i.test(baseUrl)
+    timeoutMs: clampTimeout(process.env.LLM_TIMEOUT_MS, 120_000),
+    useJsonMode: isDeepSeek,
+    isDeepSeek,
+    thinkingEnabled: ["1", "true", "yes", "on", "enabled"].includes(
+      String(process.env.LLM_THINKING_ENABLED || "").trim().toLowerCase()
+    )
   };
 }
 
@@ -484,7 +492,10 @@ function normalizeDraft(llmDraft, extractedContent, structuredHints) {
 
   const llmProducts = Array.isArray(llmOrderDraft?.products) ? llmOrderDraft.products : [];
   const warnings = new Set(normalizeStringArray(llmOrderDraft?.warnings));
-  const mergedProducts = mergeProducts(structuredProducts, llmProducts, warnings);
+  const mergedProducts = ensureUniqueProductLineNumbers(
+    mergeProducts(structuredProducts, llmProducts, warnings),
+    warnings
+  );
   const requirements = mergeRequirements(llmOrderDraft?.requirements || {}, structuredRequirements);
   const evidence = mergeTopLevelEvidence(llmOrderDraft?.evidence || {}, structuredRequirementEvidence);
 
@@ -569,6 +580,28 @@ function mergeProducts(structuredProducts, llmProducts, warnings) {
       evidence: normalizedStructured.evidence?.source ? normalizedStructured.evidence : normalizedLlm.evidence
     };
   });
+}
+
+function ensureUniqueProductLineNumbers(products, warnings) {
+  const seen = new Set();
+  const hasDuplicateOrInvalidLineNumber = products.some((product) => {
+    const lineNo = toInteger(product?.line_no);
+    if (!lineNo || seen.has(lineNo)) {
+      return true;
+    }
+    seen.add(lineNo);
+    return false;
+  });
+
+  if (!hasDuplicateOrInvalidLineNumber) {
+    return products;
+  }
+
+  warnings.add("检测到跨来源产品行号重复，已按合并结果重新编号");
+  return products.map((product, index) => ({
+    ...product,
+    line_no: index + 1
+  }));
 }
 
 function matchLlmProduct(structuredProduct, llmProducts) {

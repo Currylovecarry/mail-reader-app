@@ -1,29 +1,10 @@
 import { extractSpreadsheetBlocks, isSpreadsheetAttachment } from "./spreadsheet-extractor.mjs";
 import { extractPdfBlocks, isPdfAttachment } from "./pdf-extractor.mjs";
 import { extractImageOcrBlocks, isImageAttachment } from "./image-ocr-extractor.mjs";
-
-function decodeHtmlEntities(value) {
-  return String(value || "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'")
-    .replace(/&#(\d+);/g, (_match, code) => decodeCodePoint(Number(code)))
-    .replace(/&#x([a-fA-F0-9]+);/g, (_match, code) => decodeCodePoint(parseInt(code, 16)));
-}
-
-function decodeCodePoint(codePoint) {
-  try {
-    return String.fromCodePoint(codePoint);
-  } catch {
-    return "";
-  }
-}
+import { decodeHtmlEntities } from "./html-entities.mjs";
 
 function normalizeText(value) {
-  return String(value || "")
+  return decodeHtmlEntities(value)
     .replace(/\r/g, "")
     .split("\n")
     .map((line) => line.replace(/[ \t]+/g, " ").trim())
