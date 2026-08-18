@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
-import { countRetainedAddedMails } from "./mail-service.mjs";
+import { countRetainedAddedMails, normalizeMailboxConfig } from "./mail-service.mjs";
 
 function mail(id, time) {
   return {
@@ -31,3 +30,49 @@ test("已保留邮件和同 messageId 覆盖邮件不重复计为新增", () => 
 
   assert.equal(countRetainedAddedMails(retained, previousKeys), 1);
 });
+
+const config = normalizeMailboxConfig({
+  email: "orders@example.com",
+  imapHost: "imap.example.com",
+  imapPort: "993",
+  imapMailbox: "INBOX",
+  imapSecure: true,
+  smtpHost: "smtp.example.com",
+  smtpPort: 465,
+  smtpSecure: false,
+  authCode: "app-password"
+});
+
+assert.equal(config.MAIL_MODE, "imap_smtp");
+assert.equal(config.MAIL_EMAIL, "orders@example.com");
+assert.equal(config.IMAP_PORT, "993");
+assert.equal(config.IMAP_SECURE, "true");
+assert.equal(config.SMTP_PORT, "465");
+assert.equal(config.SMTP_SECURE, "false");
+assert.equal(config.MAIL_AUTH_CODE, "app-password");
+
+assert.throws(
+  () => normalizeMailboxConfig({
+    email: "invalid-email",
+    imapHost: "imap.example.com",
+    imapPort: 993,
+    smtpHost: "smtp.example.com",
+    smtpPort: 465,
+    authCode: "app-password"
+  }),
+  /邮箱地址格式不正确/
+);
+
+assert.throws(
+  () => normalizeMailboxConfig({
+    email: "orders@example.com",
+    imapHost: "imap.example.com",
+    imapPort: 0,
+    smtpHost: "smtp.example.com",
+    smtpPort: 465,
+    authCode: "app-password"
+  }),
+  /IMAP 端口/
+);
+
+console.log("mail-service config test passed");

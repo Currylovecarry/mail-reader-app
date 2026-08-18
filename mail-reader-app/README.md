@@ -75,6 +75,59 @@ items are saved. The current `test_product_catalog` is derived from historical
 recognition data for integration testing and must not be treated as the official
 business product master.
 
+## Manual Review
+
+Mails with incomplete recognition or uncertain product matches enter
+`manual_review`. In the UI, reviewers can choose one of the displayed product
+candidates, save a review note, and then move the mail to `pending_confirmation`.
+Only after this step can the normal confirmation action mark the mail as
+processed.
+
+Use `PATCH /api/mail/:emailId/manual-review` to save a manual review change.
+`emailId` must be URL encoded. The endpoint only accepts mails currently in
+`manual_review`, and a selected product must be one of that item's saved
+candidates.
+
+```json
+{
+  "confirmations": [
+    {
+      "recognition_item_id": 42,
+      "selected_product_id": 18
+    }
+  ],
+  "review_note": "已根据客户附件确认规格"
+}
+```
+
+To complete a fully resolved review, send:
+
+```json
+{
+  "complete": true,
+  "review_note": "全部产品已由人工确认"
+}
+```
+
+The response returns `workflow`, `product_matches`, and `can_complete`.
+Completion is rejected while any product remains pending review or unmatched.
+
+To correct a recognized model, quantity, or unit, submit one `item_edit` at a
+time. The server replaces the saved recognition item and reruns product
+matching, so reviewers always see candidates for the corrected value.
+
+```json
+{
+  "item_edit": {
+    "recognition_item_id": 42,
+    "product_model": "GN 675-60-M8",
+    "quantity": 10,
+    "unit": "个"
+  },
+  "review_note": "已按附件数量修正"
+}
+```
+
 ## Send Mail
 
 The backend exposes `POST /api/mail/send` with JSON:

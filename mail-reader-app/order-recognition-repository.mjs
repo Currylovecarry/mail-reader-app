@@ -145,13 +145,52 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
     return order ? hydrateOrder(order) : null;
   }
 
+  async function updateOrderRecognitionItem(recognitionOrderId, input) {
+    await ensureStorage();
+    const order = await getOrderRecognition(recognitionOrderId);
+    const itemId = positiveInteger(input?.recognitionItemId);
+    if (!order || !itemId) {
+      return null;
+    }
+
+    const targetItem = database.prepare(`
+      SELECT line_no
+      FROM recognition_order_items
+      WHERE id = ? AND recognition_order_id = ?
+    `).get(itemId, order.id);
+    if (!targetItem) {
+      throw new Error("待修改的产品不属于当前订单");
+    }
+
+    const productModel = cleanText(input?.productModel);
+    const quantity = nullableNumber(input?.quantity);
+    const unit = cleanText(input?.unit);
+    if (!productModel || quantity === null || quantity <= 0 || !unit) {
+      throw new Error("型号、正数数量和单位均为必填项");
+    }
+
+    const requirements = order.requirements || {};
+    return saveOrderDraft({
+      email_id: order.email_id,
+      requirements,
+      products: order.items.map((item) => ({
+        line_no: item.line_no,
+        product_model: item.line_no === targetItem.line_no ? productModel : item.model_raw,
+        quantity: item.line_no === targetItem.line_no ? quantity : item.quantity,
+        unit: item.line_no === targetItem.line_no ? unit : item.unit,
+        confidence: item.line_no === targetItem.line_no ? 1 : item.confidence
+      }))
+    });
+  }
+
   function hydrateOrder(order) {
     const items = database.prepare(`
-      SELECT line_no, model_raw, model_normalized, quantity, unit, confidence
+      SELECT id AS recognition_item_id, line_no, model_raw, model_normalized, quantity, unit, confidence
       FROM recognition_order_items
       WHERE recognition_order_id = ?
       ORDER BY line_no ASC, id ASC
     `).all(order.id).map((item) => ({
+      recognition_item_id: item.recognition_item_id,
       line_no: item.line_no,
       model_raw: item.model_raw,
       model_normalized: item.model_normalized,
@@ -190,6 +229,7 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
     listOrderRecognitions,
     getOrderRecognition,
     getOrderRecognitionByEmailId,
+    updateOrderRecognitionItem,
     close
   };
 }

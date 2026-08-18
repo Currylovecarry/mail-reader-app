@@ -208,6 +208,77 @@ export function createProductMatchingService({ databasePath = defaultDatabasePat
     return buildOrderMatchPayload(order, items);
   }
 
+  async function confirmManualMatches(recognitionOrderId, confirmations) {
+    await ensureStorage();
+    const orderId = positiveInteger(recognitionOrderId);
+    const entries = Array.isArray(confirmations) ? confirmations : [];
+    if (!orderId || !entries.length) {
+      throw new Error("请至少选择一条待核验的产品匹配结果");
+    }
+    if (!findOrder(orderId)) {
+      return null;
+    }
+
+    const seenItemIds = new Set();
+    const now = new Date().toISOString();
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      for (const confirmation of entries) {
+        const itemId = positiveInteger(confirmation?.recognition_item_id);
+        const productId = positiveInteger(confirmation?.selected_product_id);
+        if (!itemId || !productId || seenItemIds.has(itemId)) {
+          throw new Error("人工核验的产品选择不正确");
+        }
+        seenItemIds.add(itemId);
+
+        const matchResult = database.prepare(`
+          SELECT r.id
+          FROM product_match_results r
+          JOIN recognition_order_items i ON i.id = r.recognition_item_id
+          WHERE r.recognition_item_id = ?
+            AND i.recognition_order_id = ?
+            AND r.need_manual_review = 1
+        `).get(itemId, orderId);
+        if (!matchResult) {
+          throw new Error("该产品当前不需要人工核验，或不属于此邮件");
+        }
+
+        const isCandidate = database.prepare(`
+          SELECT 1
+          FROM product_match_candidates
+          WHERE match_result_id = ? AND product_id = ?
+        `).get(matchResult.id, productId);
+        if (!isCandidate) {
+          throw new Error("只能确认当前产品库提供的候选项");
+        }
+
+        database.prepare(`
+          UPDATE product_match_results
+          SET match_status = 'exact_match',
+            match_method = 'manual_confirmed',
+            final_score = 100,
+            spec_warning = '',
+            need_manual_review = 0,
+            review_reason = '',
+            selected_product_id = ?,
+            review_status = 'confirmed',
+            updated_at = ?
+          WHERE id = ?
+        `).run(productId, now, matchResult.id);
+      }
+      database.exec("COMMIT");
+    } catch (error) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // The transaction may already have been closed before a later error.
+      }
+      throw error;
+    }
+
+    return getOrderMatches(orderId);
+  }
+
   function close() {
     database?.close();
     database = undefined;
@@ -350,8 +421,14 @@ export function createProductMatchingService({ databasePath = defaultDatabasePat
     previewAllOrderRecognitions,
     matchAllOrderRecognitions,
     getOrderMatches,
+    confirmManualMatches,
     close
   };
+}
+
+function positiveInteger(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : 0;
 }
 
 function buildOrderMatchPayload(order, items) {

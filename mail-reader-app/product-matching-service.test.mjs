@@ -73,6 +73,17 @@ try {
   const persisted = await service.getOrderMatches(fuzzyOrder.id);
   assert.equal(persisted.items[0].match.candidates[0].rank, 1);
 
+  const confirmed = await service.confirmManualMatches(fuzzyOrder.id, [{
+    recognition_item_id: persisted.items[0].recognition_item_id,
+    selected_product_id: persisted.items[0].match.candidates[1].product_id
+  }]);
+  assert.equal(confirmed.summary.exact_match, 1);
+  assert.equal(confirmed.summary.need_manual_review, 0);
+  assert.equal(confirmed.items[0].match.review_status, "confirmed");
+  assert.equal(confirmed.items[0].match.selected_normalized_code, "GN675-60-M8");
+  assert.equal(confirmed.preliminary_quote.status, "complete");
+  assert.equal(confirmed.preliminary_quote.total_amount, 600);
+
   const batch = await service.previewAllOrderRecognitions();
   assert.deepEqual(
     {

@@ -398,6 +398,43 @@
         transform: none;
       }
 
+      .icon-button:disabled.workflow-action-disabled {
+        cursor: not-allowed;
+      }
+
+      .mail-workflow-state {
+        display: inline-flex;
+        align-items: center;
+        max-width: 130px;
+        min-height: 20px;
+        padding: 2px 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        color: #53616a;
+        background: #eef1f3;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.25;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .mail-workflow-state.pending-confirmation {
+        color: #126a60;
+        background: #dff3ee;
+      }
+
+      .mail-workflow-state.manual-review,
+      .mail-workflow-state.recognition-failed {
+        color: #956414;
+        background: #fff0cf;
+      }
+
+      .mail-workflow-state.not-applicable {
+        color: #67727a;
+        background: #edf0f2;
+      }
+
       .sync-button .icon {
         width: 19px;
         height: 19px;
@@ -718,6 +755,294 @@
       .reader-position strong {
         color: var(--text);
         font-weight: 650;
+      }
+
+      .workbench-navigation {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 8px;
+        padding-left: 10px;
+        border-left: 1px solid var(--line);
+      }
+
+      .workbench-navigation .icon-button {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
+      }
+
+      .workbench-position {
+        min-width: 48px;
+        color: var(--text-soft);
+        font-size: 12px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .workbench-navigation .icon-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
+      }
+
+      .workbench-exit-button {
+        display: none;
+      }
+
+      body.unprocessed-workbench .workbench-exit-button {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+        border-color: transparent;
+        border-radius: 10px;
+        color: #3d6963;
+        background: #eaf4f2;
+        box-shadow: none;
+      }
+
+      body.unprocessed-workbench .workbench-exit-button .icon {
+        width: 21px;
+        height: 21px;
+        flex-basis: 21px;
+        stroke-width: 2.15;
+      }
+
+      body.unprocessed-workbench .workbench-exit-button:hover {
+        border-color: transparent;
+        color: #235f58;
+        background: #dbeeea;
+        transform: translateX(-1px);
+      }
+
+      body.unprocessed-workbench .workbench-exit-button:focus-visible {
+        outline: 2px solid #76aea7;
+        outline-offset: 2px;
+      }
+
+      .unprocessed-sidebar,
+      .batch-processing-view {
+        display: none;
+      }
+
+      body.unprocessed-workbench .app-shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.unprocessed-workbench .navigation,
+      body.unprocessed-workbench .mail-column {
+        display: none;
+      }
+
+      body.unprocessed-workbench .reader-column {
+        grid-column: 1;
+      }
+
+      body.unprocessed-workbench .reader-scroll {
+        padding: 0 86px 0 326px;
+      }
+
+      body.unprocessed-workbench .reader-content {
+        width: min(780px, 100%);
+      }
+
+      body.unprocessed-workbench .workbench-exit-button {
+        display: inline-grid;
+        margin: 0 8px 16px;
+      }
+
+      body.unprocessed-workbench .unprocessed-sidebar {
+        position: absolute;
+        z-index: var(--z-sticky);
+        top: 0;
+        left: 0;
+        bottom: 0;
+        display: flex;
+        width: 240px;
+        flex-direction: column;
+        padding: 24px 16px 18px;
+        overflow: hidden auto;
+        background: #f8fafb;
+        border-right: 1px solid var(--line);
+      }
+
+      .unprocessed-sidebar-title {
+        margin: 0 8px 4px;
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 760;
+        letter-spacing: -0.02em;
+      }
+
+      .unprocessed-sidebar-copy {
+        margin: 0 8px 18px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .unprocessed-sidebar-nav {
+        display: grid;
+        gap: 6px;
+      }
+
+      .unprocessed-nav-button {
+        display: flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 0 10px;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        color: var(--text-soft);
+        background: transparent;
+        font-size: 13px;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+        transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+      }
+
+      .unprocessed-nav-button:hover {
+        color: var(--text);
+        background: var(--surface-soft);
+      }
+
+      .unprocessed-nav-button.active {
+        border-color: #c9e0dc;
+        color: var(--accent-strong);
+        background: var(--surface);
+      }
+
+      body.unprocessed-workbench .batch-processing-view {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 240px;
+        display: grid;
+        place-items: center;
+        padding: 40px;
+        overflow: hidden auto;
+        background: var(--surface);
+      }
+
+      .batch-processing-card {
+        width: min(560px, 100%);
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: var(--surface);
+      }
+
+      .batch-processing-card h1 {
+        margin: 0;
+        color: var(--text);
+        font-size: 24px;
+        letter-spacing: -0.025em;
+      }
+
+      .batch-processing-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .batch-processing-count {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 5px;
+        margin-top: 24px;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .batch-processing-count strong {
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .batch-processing-count span {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .batch-processing-status {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: var(--radius-sm);
+        color: var(--text-soft);
+        background: var(--surface-soft);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .batch-process-button {
+        display: inline-flex;
+        width: 100%;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 18px;
+        padding: 8px 14px;
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        color: #ffffff;
+        background: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+      }
+
+      .batch-process-button:hover:not(:disabled) {
+        border-color: var(--accent-strong);
+        background: var(--accent-strong);
+      }
+
+      .batch-process-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      body.unprocessed-workbench .workbench-navigation .icon-button {
+        position: fixed;
+        z-index: calc(var(--z-sticky) + 1);
+        top: 50%;
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+        color: var(--text-soft);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-50%);
+      }
+
+      body.unprocessed-workbench .workbench-navigation .icon-button:hover:not(:disabled) {
+        color: var(--accent-strong);
+        border-color: #bdd9d6;
+        background: var(--surface-tint);
+        transform: translateY(-50%);
+      }
+
+      body.unprocessed-workbench #workbench-previous-button {
+        left: 262px;
+      }
+
+      body.unprocessed-workbench #workbench-next-button {
+        right: 22px;
+      }
+
+      body.unprocessed-workbench.is-batch-view .reader-toolbar,
+      body.unprocessed-workbench.is-batch-view .reader-scroll {
+        display: none;
       }
 
       .reader-scroll {
@@ -1500,11 +1825,12 @@
       .product-match-panel {
         grid-column: 2 / -1;
         min-width: 0;
-        margin-top: -2px;
-        padding: 9px 10px;
+        margin-top: 2px;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
         border-radius: var(--radius-sm);
         color: var(--text-soft);
-        background: var(--surface-soft);
+        background: #fbfcfc;
       }
 
       .product-match-panel p {
@@ -1554,16 +1880,16 @@
       }
 
       .candidate-list {
-        margin-top: 8px;
+        margin-top: 10px;
         border-top: 1px solid var(--line-strong);
       }
 
       .candidate-item {
         display: grid;
-        grid-template-columns: 22px minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 0;
+        grid-template-columns: 24px minmax(0, 1fr) auto auto;
+        align-items: start;
+        gap: 9px;
+        padding: 10px 0;
       }
 
       .candidate-item + .candidate-item {
@@ -1573,11 +1899,11 @@
       .candidate-rank {
         display: grid;
         place-items: center;
-        width: 21px;
-        height: 21px;
+        width: 24px;
+        height: 24px;
         border-radius: 7px;
         color: var(--muted);
-        background: var(--surface);
+        background: var(--surface-soft);
         font-size: 10px;
         font-weight: 750;
         font-variant-numeric: tabular-nums;
@@ -1610,6 +1936,198 @@
         font-weight: 750;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
+      }
+
+      .candidate-select-button,
+      .manual-item-save-button,
+      .manual-review-save-button,
+      .manual-review-complete-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.3;
+        cursor: pointer;
+        transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+      }
+
+      .candidate-select-button,
+      .manual-item-save-button,
+      .manual-review-save-button {
+        border: 1px solid var(--line-strong);
+        color: var(--text-soft);
+        background: var(--surface);
+      }
+
+      .candidate-select-button:hover,
+      .manual-item-save-button:hover,
+      .manual-review-save-button:hover {
+        border-color: #bdd9d6;
+        color: var(--accent-strong);
+        background: var(--surface-tint);
+      }
+
+      .manual-review-complete-button {
+        border: 1px solid var(--accent-strong);
+        color: #fff;
+        background: var(--accent-strong);
+      }
+
+      .manual-review-complete-button:hover:not(:disabled) {
+        border-color: var(--accent);
+        background: var(--accent);
+      }
+
+      .candidate-select-button:focus-visible,
+      .manual-item-save-button:focus-visible,
+      .manual-review-save-button:focus-visible,
+      .manual-review-complete-button:focus-visible,
+      .manual-item-edit-input:focus-visible,
+      .manual-review-note:focus-visible {
+        outline: 2px solid rgba(47, 169, 159, 0.56);
+        outline-offset: 2px;
+      }
+
+      .candidate-select-button:disabled,
+      .manual-item-save-button:disabled,
+      .manual-review-save-button:disabled,
+      .manual-review-complete-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .manual-review-controls {
+        display: grid;
+        grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.35fr) auto;
+        align-items: center;
+        gap: 12px 16px;
+        width: 100%;
+        margin-top: 18px;
+        padding: 14px;
+        border: 1px solid #cfe3df;
+        border-radius: var(--radius-md);
+        background: #f4faf8;
+      }
+
+      .manual-review-controls[data-state="ready"] {
+        border-color: #b9ddd4;
+        background: #eef9f5;
+      }
+
+      .manual-review-header {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+
+      .manual-review-eyebrow {
+        color: var(--accent-strong);
+        font-size: 11px;
+        font-weight: 750;
+        line-height: 1.4;
+      }
+
+      .manual-review-status {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 750;
+        line-height: 1.5;
+      }
+
+      .manual-review-count {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.45;
+      }
+
+      .manual-review-note-field {
+        display: grid;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .manual-review-note-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1.45;
+      }
+
+      .manual-review-note {
+        width: 100%;
+        min-height: 58px;
+        resize: vertical;
+        box-sizing: border-box;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        padding: 8px 9px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .manual-review-actions {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 7px;
+        min-width: max-content;
+      }
+
+      .manual-item-edit {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+      }
+
+      .manual-item-edit summary {
+        color: var(--text-soft);
+        font-size: 10px;
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      .manual-item-edit-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(72px, 0.7fr) minmax(60px, 0.55fr) auto;
+        align-items: end;
+        gap: 7px;
+        margin-top: 8px;
+      }
+
+      .manual-item-edit-field {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .manual-item-edit-label {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      .manual-item-edit-input {
+        min-width: 0;
+        box-sizing: border-box;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 6px 7px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-size: 11px;
+        line-height: 1.35;
       }
 
       .purchase-quantity {
@@ -1725,6 +2243,7 @@
       .dialog {
         width: min(560px, calc(100vw - 32px));
         max-height: min(760px, calc(100dvh - 32px));
+        min-height: 0;
         padding: 0;
         overflow: hidden;
         border: 0;
@@ -1732,6 +2251,11 @@
         color: var(--text);
         background: var(--surface);
         box-shadow: 0 24px 70px rgba(28, 39, 44, 0.22);
+      }
+
+      .dialog[open] {
+        display: flex;
+        flex-direction: column;
       }
 
       .dialog::backdrop {
@@ -1756,8 +2280,13 @@
       }
 
       .dialog-body {
+        min-height: 0;
+        flex: 1 1 auto;
         padding: 20px;
         overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable;
       }
 
       .dialog-copy {
@@ -1791,6 +2320,76 @@
       .connection-row strong {
         text-align: right;
         overflow-wrap: anywhere;
+      }
+
+      .connection-dialog-actions {
+        justify-content: flex-start;
+        margin-top: 16px;
+      }
+
+      .mail-account-switch {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+      }
+
+      .mail-account-switch-header h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 15px;
+        letter-spacing: -0.01em;
+      }
+
+      .mail-account-switch-header p {
+        margin: 5px 0 16px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .mail-account-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .mail-account-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(112px, 0.42fr);
+        gap: 12px;
+      }
+
+      .mail-security-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        min-height: 40px;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        color: var(--text-soft);
+        background: var(--surface-soft);
+        font-size: 12px;
+        line-height: 1.45;
+        cursor: pointer;
+      }
+
+      .mail-security-option input {
+        width: 15px;
+        height: 15px;
+        margin: 1px 0 0;
+        accent-color: var(--accent-strong);
+      }
+
+      .mail-security-option small {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      @media (max-width: 520px) {
+        .mail-account-grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       .compose-form {
@@ -2045,6 +2644,32 @@
         }
       }
 
+      @media (max-width: 980px) {
+        body.unprocessed-workbench .unprocessed-sidebar {
+          width: 200px;
+        }
+
+        body.unprocessed-workbench .batch-processing-view {
+          left: 200px;
+        }
+
+        body.unprocessed-workbench .reader-scroll {
+          padding: 0 72px 0 246px;
+        }
+
+        body.unprocessed-workbench .reader-content {
+          width: min(760px, 100%);
+        }
+
+        body.unprocessed-workbench #workbench-previous-button {
+          left: 222px;
+        }
+
+        body.unprocessed-workbench #workbench-next-button {
+          right: 18px;
+        }
+      }
+
       @media (max-width: 680px) {
         .app-shell {
           display: block;
@@ -2090,6 +2715,85 @@
 
         .reader-position {
           display: none;
+        }
+
+        .workbench-navigation {
+          margin-left: 0;
+          padding-left: 0;
+          border-left: 0;
+        }
+
+        body.unprocessed-workbench .reader-column {
+          display: flex;
+        }
+
+        body.unprocessed-workbench .reader-content {
+          width: 100%;
+        }
+
+        body.unprocessed-workbench .reader-scroll {
+          padding: 0 52px;
+        }
+
+        body.unprocessed-workbench .workbench-navigation .icon-button {
+          width: 36px;
+          height: 36px;
+          flex-basis: 36px;
+        }
+
+        body.unprocessed-workbench #workbench-previous-button {
+          left: 8px;
+        }
+
+        body.unprocessed-workbench #workbench-next-button {
+          right: 8px;
+        }
+
+        body.unprocessed-workbench .unprocessed-sidebar {
+          top: 0;
+          right: 0;
+          bottom: auto;
+          width: auto;
+          min-height: 56px;
+          flex-direction: row;
+          align-items: center;
+          padding: 8px 12px;
+          overflow: hidden;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .unprocessed-sidebar-title,
+        .unprocessed-sidebar-copy {
+          display: none;
+        }
+
+        .unprocessed-sidebar-nav {
+          display: flex;
+          flex: 1;
+          width: auto;
+          min-width: 0;
+          gap: 6px;
+        }
+
+        .unprocessed-sidebar-nav .unprocessed-nav-button {
+          flex: 1;
+          min-height: 38px;
+          justify-content: center;
+        }
+
+        body.unprocessed-workbench .reader-toolbar {
+          margin-top: 56px;
+        }
+
+        body.unprocessed-workbench .reader-scroll {
+          margin-top: 56px;
+        }
+
+        body.unprocessed-workbench .batch-processing-view {
+          top: 56px;
+          left: 0;
+          padding: 20px;
         }
 
         .reader-content {
@@ -2164,6 +2868,35 @@
 
         .candidate-score {
           grid-column: 2;
+        }
+
+        .candidate-select-button {
+          grid-column: 2;
+          justify-self: start;
+        }
+
+        .manual-review-controls {
+          grid-template-columns: minmax(0, 1fr);
+          align-items: stretch;
+        }
+
+        .manual-review-actions {
+          align-items: center;
+          flex-direction: row;
+          justify-content: flex-start;
+          min-width: 0;
+        }
+
+        .manual-item-edit-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .manual-item-edit-field:first-child {
+          grid-column: 1 / -1;
+        }
+
+        .manual-item-save-button {
+          justify-self: start;
         }
 
         .preliminary-quote {
@@ -2247,13 +2980,12 @@
             <span class="nav-label">未处理</span>
             <span class="nav-count" id="unprocessed-count">0</span>
           </button>
-          <button class="nav-item" type="button" data-folder="processed">
+          <button class="nav-item" type="button" data-folder="manual_review">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="8.5"></circle>
-              <path d="m8.5 12 2.3 2.3 4.8-5"></path>
+              <path d="M5 4h14v16H5z"></path><path d="M8 9h8M8 13h5M15 18l2 2 4-4"></path>
             </svg>
-            <span class="nav-label">已处理</span>
-            <span class="nav-count" id="processed-count">0</span>
+            <span class="nav-label">人工核验</span>
+            <span class="nav-count" id="manual-review-count">0</span>
           </button>
           <button class="nav-item" type="button" data-folder="new">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -2386,12 +3118,24 @@
               </svg>
             </button>
             <span class="reader-position" id="reader-position">选择一封邮件开始阅读</span>
+            <div class="workbench-navigation" id="workbench-navigation" hidden role="group" aria-label="切换未处理邮件">
+              <button class="icon-button" id="workbench-previous-button" type="button" aria-label="上一封未处理邮件" title="上一封未处理邮件">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14 18-6-6 6-6"></path>
+                </svg>
+              </button>
+              <output class="workbench-position" id="workbench-position" aria-live="polite">0 / 0</output>
+              <button class="icon-button" id="workbench-next-button" type="button" aria-label="下一封未处理邮件" title="下一封未处理邮件">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m10 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="reader-toolbar-actions">
-            <button class="icon-button" id="processed-button" type="button" aria-label="标记为已处理" title="标记为已处理">
+            <button class="icon-button" id="not-applicable-button" type="button" aria-label="标记为无需处理" title="标记为无需处理">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.5"></circle>
-                <path d="m8.5 12 2.3 2.3 4.8-5"></path>
+                <path d="M4 7h16v12H4z"></path><path d="M9 11h6M4 7l2-3h12l2 3"></path>
               </svg>
             </button>
             <button class="icon-button" id="star-button" type="button" aria-label="收藏邮件" title="收藏">
@@ -2487,6 +3231,28 @@
             </section>
           </article>
         </div>
+        <aside class="unprocessed-sidebar" id="unprocessed-sidebar" aria-label="未处理工作台导航" hidden>
+          <button class="icon-button workbench-exit-button" id="workbench-exit-button" type="button" aria-label="返回收件箱" title="返回收件箱" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m14.5 5.5-6.5 6.5 6.5 6.5"></path>
+            </svg>
+          </button>
+          <h2 class="unprocessed-sidebar-title" id="processing-workbench-title">未处理工作台</h2>
+          <p class="unprocessed-sidebar-copy" id="processing-workbench-copy">批量识别当前未处理邮件。</p>
+          <nav class="unprocessed-sidebar-nav" aria-label="处理工作台">
+            <button class="unprocessed-nav-button" id="single-processing-view-button" type="button">单封处理</button>
+            <button class="unprocessed-nav-button" id="batch-view-button" type="button">批量处理</button>
+          </nav>
+        </aside>
+        <section class="batch-processing-view" id="batch-processing-view" aria-labelledby="batch-processing-view-title" hidden>
+          <div class="batch-processing-card">
+            <h1 id="batch-processing-view-title">批量处理</h1>
+            <p>对当前全部未处理邮件依次执行 AI 识别；完整识别且产品精确匹配的邮件标记为已核验，其余邮件进入人工核验或识别失败。</p>
+            <div class="batch-processing-count"><strong id="batch-processing-queue-count">0</strong><span>封待处理邮件</span></div>
+            <div class="batch-processing-status" id="batch-processing-status">等待开始批量识别</div>
+            <button class="batch-process-button" id="batch-process-all-button" type="button">批量识别（不自动完成）</button>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -2502,10 +3268,69 @@
         </button>
       </div>
       <div class="dialog-body">
-        <p class="dialog-copy">当前邮箱连接正常。你可以在收件箱右上角随时同步最新邮件。</p>
+        <p class="dialog-copy">账号信息仅保存在本机。同步或发送邮件时，系统才会连接对应的邮箱服务器。</p>
         <div class="connection-details" id="mail-config-summary">
           <div class="connection-row"><span>连接状态</span><strong>正在读取</strong></div>
         </div>
+        <div class="dialog-actions connection-dialog-actions">
+          <button class="secondary-button" id="mailbox-switch-button" type="button">切换邮箱</button>
+        </div>
+        <section class="mail-account-switch" id="mail-account-switch" hidden aria-labelledby="mail-account-switch-title">
+          <div class="mail-account-switch-header">
+            <h3 id="mail-account-switch-title">连接另一个邮箱</h3>
+            <p>请填写新邮箱的 IMAP、SMTP 服务器和授权码。授权码不会在页面中显示或返回。</p>
+          </div>
+          <form class="mail-account-form" id="mail-account-form">
+            <div class="form-field">
+              <label for="mailbox-email">邮箱地址</label>
+              <input id="mailbox-email" name="email" type="email" required autocomplete="username" placeholder="name@example.com" />
+            </div>
+            <div class="mail-account-grid">
+              <div class="form-field">
+                <label for="imap-host">IMAP 收件服务器</label>
+                <input id="imap-host" name="imapHost" type="text" required autocomplete="off" placeholder="imap.example.com" />
+              </div>
+              <div class="form-field">
+                <label for="imap-port">端口</label>
+                <input id="imap-port" name="imapPort" type="number" min="1" max="65535" required inputmode="numeric" />
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="imap-mailbox">收件箱文件夹</label>
+              <input id="imap-mailbox" name="imapMailbox" type="text" required autocomplete="off" value="INBOX" />
+            </div>
+            <label class="mail-security-option">
+              <input id="imap-secure" name="imapSecure" type="checkbox" checked />
+              <span>IMAP 使用 SSL/TLS 加密连接</span>
+            </label>
+            <div class="mail-account-grid">
+              <div class="form-field">
+                <label for="smtp-host">SMTP 发件服务器</label>
+                <input id="smtp-host" name="smtpHost" type="text" required autocomplete="off" placeholder="smtp.example.com" />
+              </div>
+              <div class="form-field">
+                <label for="smtp-port">端口</label>
+                <input id="smtp-port" name="smtpPort" type="number" min="1" max="65535" required inputmode="numeric" />
+              </div>
+            </div>
+            <label class="mail-security-option">
+              <input id="smtp-secure" name="smtpSecure" type="checkbox" checked />
+              <span>SMTP 使用 SSL/TLS 加密连接</span>
+            </label>
+            <div class="form-field">
+              <label for="mail-auth-code">邮箱授权码</label>
+              <input id="mail-auth-code" name="authCode" type="password" required autocomplete="new-password" placeholder="填写授权码或应用专用密码" />
+            </div>
+            <label class="mail-security-option">
+              <input id="clear-imported-mails" name="clearImportedMails" type="checkbox" />
+              <span>清空本地邮件列表缓存（推荐）<small>不会删除真实邮箱中的邮件，也不会删除本地的订单识别历史。</small></span>
+            </label>
+            <div class="dialog-actions">
+              <button class="secondary-button" id="mailbox-switch-cancel-button" type="button">取消</button>
+              <button class="primary-button" id="mailbox-save-button" type="submit">保存并切换</button>
+            </div>
+          </form>
+        </section>
       </div>
     </dialog>
 
@@ -2565,7 +3390,7 @@
         inboxCount: document.getElementById("inbox-count"),
         starredCount: document.getElementById("starred-count"),
         unprocessedCount: document.getElementById("unprocessed-count"),
-        processedCount: document.getElementById("processed-count"),
+        manualReviewCount: document.getElementById("manual-review-count"),
         newCount: document.getElementById("new-count"),
         folderTitle: document.getElementById("folder-title"),
         search: document.getElementById("mail-search"),
@@ -2576,6 +3401,20 @@
         mobileBackButton: document.getElementById("mobile-back-button"),
         mobileScrim: document.getElementById("mobile-scrim"),
         readerPosition: document.getElementById("reader-position"),
+        unprocessedSidebar: document.getElementById("unprocessed-sidebar"),
+        processingWorkbenchTitle: document.getElementById("processing-workbench-title"),
+        processingWorkbenchCopy: document.getElementById("processing-workbench-copy"),
+        singleProcessingViewButton: document.getElementById("single-processing-view-button"),
+        batchViewButton: document.getElementById("batch-view-button"),
+        batchProcessingView: document.getElementById("batch-processing-view"),
+        batchProcessingQueueCount: document.getElementById("batch-processing-queue-count"),
+        batchProcessingStatus: document.getElementById("batch-processing-status"),
+        batchProcessAllButton: document.getElementById("batch-process-all-button"),
+        workbenchExitButton: document.getElementById("workbench-exit-button"),
+        workbenchNavigation: document.getElementById("workbench-navigation"),
+        workbenchPosition: document.getElementById("workbench-position"),
+        workbenchPreviousButton: document.getElementById("workbench-previous-button"),
+        workbenchNextButton: document.getElementById("workbench-next-button"),
         readerEmpty: document.getElementById("reader-empty"),
         readerContent: document.getElementById("reader-content"),
         readerScroll: document.getElementById("reader-scroll"),
@@ -2593,7 +3432,7 @@
         extractionStatus: document.getElementById("extraction-status"),
         extractionResult: document.getElementById("extraction-result"),
         refreshExtractionButton: document.getElementById("refresh-extraction-button"),
-        processedButton: document.getElementById("processed-button"),
+        notApplicableButton: document.getElementById("not-applicable-button"),
         starButton: document.getElementById("star-button"),
         inlineStarButton: document.getElementById("inline-star-button"),
         replyButton: document.getElementById("reply-button"),
@@ -2604,6 +3443,21 @@
         guideCloseButton: document.getElementById("guide-close-button"),
         connectionEmail: document.getElementById("connection-email"),
         mailConfigSummary: document.getElementById("mail-config-summary"),
+        mailboxSwitchButton: document.getElementById("mailbox-switch-button"),
+        mailboxSwitch: document.getElementById("mail-account-switch"),
+        mailboxConfigForm: document.getElementById("mail-account-form"),
+        mailboxEmail: document.getElementById("mailbox-email"),
+        imapHost: document.getElementById("imap-host"),
+        imapPort: document.getElementById("imap-port"),
+        imapMailbox: document.getElementById("imap-mailbox"),
+        imapSecure: document.getElementById("imap-secure"),
+        smtpHost: document.getElementById("smtp-host"),
+        smtpPort: document.getElementById("smtp-port"),
+        smtpSecure: document.getElementById("smtp-secure"),
+        mailAuthCode: document.getElementById("mail-auth-code"),
+        clearImportedMails: document.getElementById("clear-imported-mails"),
+        mailboxSwitchCancelButton: document.getElementById("mailbox-switch-cancel-button"),
+        mailboxSaveButton: document.getElementById("mailbox-save-button"),
         composeDialog: document.getElementById("compose-dialog"),
         composeDialogTitle: document.getElementById("compose-dialog-title"),
         composeForm: document.getElementById("compose-form"),
@@ -2622,7 +3476,7 @@
         inbox: "收件箱",
         starred: "已标星",
         unprocessed: "未处理邮件",
-        processed: "已处理邮件",
+        manual_review: "人工核验",
         new: "新增邮件"
       };
 
@@ -2637,7 +3491,7 @@
       const extractionCacheEnabled = false;
       const starredMailIds = new Set();
       const deletedMailIds = new Set();
-      const processedMailIds = new Set(readStoredIds("smart-mail-processed"));
+      const mailWorkflowById = new Map();
       const newMailIds = new Set(readStoredIds("smart-mail-new"));
       const knownMailIds = new Set(readStoredIds("smart-mail-known"));
       const sentMails = [];
@@ -2647,8 +3501,12 @@
       let activeLabel = "";
       let currentExtractionRequest = 0;
       let currentProductMatchRequest = 0;
+      let batchRecognitionRunning = false;
+      let batchRecognitionStatus = "";
+      let activeUnprocessedView = "manual";
       let toastTimer = 0;
       let bodyExpanded = false;
+      let currentMailConfig = null;
 
       function readStoredIds(key) {
         try {
@@ -2661,7 +3519,6 @@
 
       function persistMailStatus() {
         try {
-          window.localStorage.setItem("smart-mail-processed", JSON.stringify([...processedMailIds]));
           window.localStorage.setItem("smart-mail-new", JSON.stringify([...newMailIds]));
           window.localStorage.setItem("smart-mail-known", JSON.stringify([...knownMailIds]));
         } catch {
@@ -2676,14 +3533,78 @@
             if (!knownMailIds.has(id)) newMailIds.add(id);
           });
         }
-        [processedMailIds, newMailIds].forEach((set) => {
-          [...set].forEach((id) => {
-            if (!currentIds.has(id)) set.delete(id);
-          });
+        [...newMailIds].forEach((id) => {
+          if (!currentIds.has(id)) newMailIds.delete(id);
+        });
+        [...mailWorkflowById.keys()].forEach((id) => {
+          if (!currentIds.has(id)) mailWorkflowById.delete(id);
         });
         knownMailIds.clear();
         currentIds.forEach((id) => knownMailIds.add(id));
         persistMailStatus();
+      }
+
+      const workflowLabels = {
+        pending_recognition: "待识别",
+        pending_confirmation: "已核验",
+        manual_review: "待人工核验",
+        recognition_failed: "识别失败",
+        not_applicable: "无需处理"
+      };
+
+      function getMailWorkflow(mailId) {
+        return mailWorkflowById.get(mailId) || {
+          email_id: mailId,
+          status: "pending_recognition",
+          recognition_order_id: null,
+          recognition_provider: "",
+          recognition_status: "",
+          reason: ""
+        };
+      }
+
+      function setMailWorkflow(record) {
+        if (!record?.email_id) return;
+        const status = record.status === "processed" ? "pending_confirmation" : record.status;
+        if (!workflowLabels[status]) return;
+        mailWorkflowById.set(record.email_id, { ...record, status });
+      }
+
+      function isUnprocessedMail(mail) {
+        const status = getMailWorkflow(mail.id).status;
+        return !["pending_confirmation", "not_applicable", "manual_review"].includes(status);
+      }
+
+      function workflowStatusMarkup(mail) {
+        const workflow = getMailWorkflow(mail.id);
+        const statusClass = String(workflow.status || "pending_recognition").replaceAll("_", "-");
+        const reason = workflow.reason ? ` title="${escapeHtml(workflow.reason)}"` : "";
+        return `<span class="mail-workflow-state ${statusClass}"${reason}>${escapeHtml(workflowLabels[workflow.status] || "待识别")}</span>`;
+      }
+
+      async function loadMailWorkflows() {
+        if (window.location.protocol === "file:") return;
+        try {
+          const response = await fetch("/api/mail-workflows");
+          if (!response.ok) throw new Error("邮件状态读取失败");
+          const payload = await response.json();
+          mailWorkflowById.clear();
+          (Array.isArray(payload.records) ? payload.records : []).forEach(setMailWorkflow);
+        } catch {
+          // The default state remains pending_recognition until the server is available.
+        }
+      }
+
+      async function requestWorkflowChange(mail, status) {
+        const response = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/workflow`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "邮件状态更新失败");
+        setMailWorkflow(payload.record);
+        return payload.record;
       }
 
       function escapeHtml(value) {
@@ -2848,9 +3769,9 @@
         if (activeFolder === "starred") {
           records = mailRecords.filter((mail) => starredMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
         } else if (activeFolder === "unprocessed") {
-          records = mailRecords.filter((mail) => !processedMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
-        } else if (activeFolder === "processed") {
-          records = mailRecords.filter((mail) => processedMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
+          records = mailRecords.filter((mail) => isUnprocessedMail(mail) && !deletedMailIds.has(mail.id));
+        } else if (activeFolder === "manual_review") {
+          records = mailRecords.filter((mail) => getMailWorkflow(mail.id).status === "manual_review" && !deletedMailIds.has(mail.id));
         } else if (activeFolder === "new") {
           records = mailRecords.filter((mail) => newMailIds.has(mail.id) && !deletedMailIds.has(mail.id));
         } else {
@@ -2877,8 +3798,8 @@
         });
         elements.inboxCount.textContent = availableMails.length;
         elements.starredCount.textContent = starredMailIds.size;
-        elements.unprocessedCount.textContent = availableMails.filter((mail) => !processedMailIds.has(mail.id)).length;
-        elements.processedCount.textContent = availableMails.filter((mail) => processedMailIds.has(mail.id)).length;
+        elements.unprocessedCount.textContent = availableMails.filter(isUnprocessedMail).length;
+        elements.manualReviewCount.textContent = availableMails.filter((mail) => getMailWorkflow(mail.id).status === "manual_review").length;
         elements.newCount.textContent = availableMails.filter((mail) => newMailIds.has(mail.id)).length;
         document.querySelectorAll("[data-label-count]").forEach((counter) => {
           const category = counter.dataset.labelCount;
@@ -2916,6 +3837,7 @@
                 <p>${isSearch ? "尝试更换关键词，或清除搜索条件。" : "同步收件箱后，新邮件会显示在这里。"}</p>
               </div>
             </div>`;
+          updateWorkbenchNavigation(null);
           return;
         }
 
@@ -2937,7 +3859,10 @@
                 <span class="mail-subject">${escapeHtml(mail.subject || "(无主题)")}</span>
                 <span class="mail-preview">${escapeHtml(preview)}</span>
                 <span class="mail-item-footer">
-                  <span class="mail-category" style="--category-color: ${category.color}">${escapeHtml(category.label)}</span>
+                  <span>
+                    <span class="mail-category" style="--category-color: ${category.color}">${escapeHtml(category.label)}</span>
+                    ${workflowStatusMarkup(mail)}
+                  </span>
                   <span>
                     ${isStarred ? '<span class="star-indicator" aria-label="已标星"><svg class="icon" viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"></path></svg></span>' : ""}
                     ${hasAttachments ? '<span class="attachment-indicator" aria-label="有附件"><svg class="icon" viewBox="0 0 24 24"><path d="m20.5 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 1 1-2.8-2.8l8.2-8.2"></path></svg></span>' : ""}
@@ -2950,17 +3875,21 @@
         elements.list.querySelectorAll("[data-mail-id]").forEach((item) => {
           item.addEventListener("click", () => setActiveMail(item.dataset.mailId));
         });
+        updateWorkbenchNavigation(getActiveMail());
       }
 
       function renderReader(mail) {
         const hasMail = Boolean(mail);
         elements.readerEmpty.hidden = hasMail;
         elements.readerContent.hidden = !hasMail;
-        [elements.processedButton, elements.starButton, elements.inlineStarButton, elements.replyButton, elements.forwardButton, elements.deleteButton, elements.refreshExtractionButton]
+        [elements.notApplicableButton, elements.starButton, elements.inlineStarButton, elements.replyButton, elements.forwardButton, elements.deleteButton, elements.refreshExtractionButton]
           .forEach((button) => { button.disabled = !hasMail; });
 
         if (!mail) {
-          elements.readerPosition.textContent = "选择一封邮件开始阅读";
+          elements.readerPosition.textContent = isUnprocessedWorkbench()
+            ? getProcessingWorkbenchLabel()
+            : "选择一封邮件开始阅读";
+          updateWorkbenchNavigation(null);
           return;
         }
 
@@ -2978,14 +3907,174 @@
 
         const visible = getVisibleMails();
         const index = visible.findIndex((item) => item.id === mail.id);
-        elements.readerPosition.innerHTML = index >= 0
-          ? `<strong>${index + 1}</strong> / ${visible.length}`
-          : "邮件详情";
+        elements.readerPosition.innerHTML = isUnprocessedWorkbench()
+          ? getProcessingWorkbenchLabel()
+          : index >= 0
+            ? `<strong>${index + 1}</strong> / ${visible.length}`
+            : "邮件详情";
+        updateWorkbenchNavigation(mail);
 
         renderBody(mail);
         renderAttachments(mail);
-        updateProcessedState();
+        updateWorkflowActionState();
         updateStarState();
+      }
+
+      function isUnprocessedWorkbench() {
+        return ["unprocessed", "manual_review"].includes(activeFolder) && !activeLabel;
+      }
+
+      function getProcessingWorkbenchLabel() {
+        if (activeFolder === "manual_review") {
+          return "人工核验";
+        }
+        return "未处理工作台";
+      }
+
+      function updateWorkbenchNavigation(mail) {
+        const active = isUnprocessedWorkbench();
+        const records = active ? getVisibleMails() : [];
+        const index = mail ? records.findIndex((item) => item.id === mail.id) : -1;
+        const hasCurrentMail = index >= 0;
+        const movedToManualReview = Boolean(
+          mail
+          && activeFolder === "unprocessed"
+          && !activeLabel
+          && getMailWorkflow(mail.id).status === "manual_review"
+        );
+        const batchViewActive = activeFolder === "unprocessed" && activeUnprocessedView === "batch";
+        const manualReviewViewActive = activeFolder === "manual_review";
+        const mailWorkbenchActive = active && !batchViewActive;
+
+        elements.body.classList.toggle("unprocessed-workbench", active);
+        elements.body.classList.toggle("is-batch-view", batchViewActive);
+        elements.body.classList.toggle("is-manual-review-view", manualReviewViewActive);
+        elements.unprocessedSidebar.hidden = !active;
+        elements.batchProcessingView.hidden = !batchViewActive;
+        elements.workbenchExitButton.hidden = !active;
+        elements.workbenchNavigation.hidden = !mailWorkbenchActive;
+        elements.processingWorkbenchTitle.textContent = manualReviewViewActive
+          ? "人工核验"
+          : "未处理工作台";
+        elements.processingWorkbenchCopy.textContent = manualReviewViewActive
+          ? "依次处理待复核项，核验后可删除或返回收件箱。"
+          : "逐封处理未处理邮件，也可切换至批量识别。";
+        elements.workbenchExitButton.setAttribute("aria-label", "返回收件箱");
+        elements.workbenchExitButton.title = "返回收件箱";
+        elements.workbenchPosition.textContent = hasCurrentMail
+          ? `${index + 1} / ${records.length}`
+          : movedToManualReview
+            ? `已转人工核验 · 待处理 ${records.length}`
+            : `0 / ${records.length}`;
+        elements.workbenchPreviousButton.disabled = !hasCurrentMail || index === 0;
+        elements.workbenchNextButton.disabled = movedToManualReview
+          ? !records.length
+          : !hasCurrentMail || index === records.length - 1;
+        updateUnprocessedView(records, active, batchViewActive);
+      }
+
+      function updateUnprocessedView(records, active, batchViewActive) {
+        if (!active) return;
+
+        elements.batchViewButton.classList.toggle("active", batchViewActive);
+        elements.singleProcessingViewButton.classList.toggle(
+          "active",
+          activeFolder === "unprocessed" && activeUnprocessedView === "manual"
+        );
+        elements.singleProcessingViewButton.hidden = activeFolder !== "unprocessed";
+        elements.batchViewButton.hidden = activeFolder !== "unprocessed";
+        elements.batchProcessingQueueCount.textContent = records.length;
+        elements.batchProcessAllButton.disabled = !records.length || batchRecognitionRunning;
+        elements.batchProcessAllButton.textContent = batchRecognitionRunning
+          ? "正在批量识别"
+          : "批量识别（不自动完成）";
+        if (!batchRecognitionRunning) {
+          if (!records.length) {
+            batchRecognitionStatus = "当前没有待处理邮件";
+          } else if (!batchRecognitionStatus) {
+            batchRecognitionStatus = "等待开始批量识别";
+          }
+          elements.batchProcessingStatus.textContent = batchRecognitionStatus;
+        }
+      }
+
+      function setUnprocessedView(view) {
+        if (activeFolder !== "unprocessed" || !["batch", "manual"].includes(view)) return;
+        activeUnprocessedView = view;
+        updateWorkbenchNavigation(getActiveMail());
+        if (view === "manual") renderReader(getActiveMail());
+      }
+
+      async function processAllUnprocessedMails() {
+        if (batchRecognitionRunning || activeFolder !== "unprocessed") return;
+        const records = getVisibleMails().slice();
+        if (!records.length) return;
+
+        batchRecognitionRunning = true;
+        let completed = 0;
+        let pendingConfirmation = 0;
+        let manualReview = 0;
+        let failed = 0;
+        batchRecognitionStatus = `正在识别 0 / ${records.length}`;
+        updateWorkbenchNavigation(getActiveMail());
+
+        for (const mail of records) {
+          try {
+            batchRecognitionStatus = `正在识别 ${completed + 1} / ${records.length}`;
+            elements.batchProcessingStatus.textContent = batchRecognitionStatus;
+            const response = await fetch(
+              `/api/mail/${encodeURIComponent(mail.id)}/generate-order-draft`,
+              { method: "POST" }
+            );
+            const payload = await response.json();
+            setMailWorkflow(payload.workflow);
+            if (!response.ok || !["success", "partial_success"].includes(payload.status)) {
+              throw new Error(payload.error || "识别失败");
+            }
+            draftPayloadByMailId.set(mail.id, payload);
+            if (extractionCacheEnabled) {
+              extractionCache.set(mail.id, { kind: "draft", payload });
+            }
+            if (payload.workflow?.status === "pending_confirmation") {
+              pendingConfirmation += 1;
+            } else {
+              manualReview += 1;
+            }
+          } catch {
+            failed += 1;
+          } finally {
+            completed += 1;
+          }
+        }
+
+        batchRecognitionRunning = false;
+        persistMailStatus();
+        batchRecognitionStatus = `批量识别完成：已核验 ${pendingConfirmation} 封，人工核验 ${manualReview} 封${failed ? `，失败 ${failed} 封` : ""}`;
+        elements.batchProcessingStatus.textContent = batchRecognitionStatus;
+        const remainingRecords = getVisibleMails();
+        if (!remainingRecords.some((mail) => mail.id === activeMailId)) {
+          activeMailId = remainingRecords[0]?.id || "";
+        }
+        renderList();
+        renderReader(getActiveMail());
+        showToast(
+          failed
+            ? `批量识别完成：已核验 ${pendingConfirmation} 封，人工核验 ${manualReview} 封，失败 ${failed} 封`
+            : `批量识别完成：已核验 ${pendingConfirmation} 封，人工核验 ${manualReview} 封`,
+          failed ? "warning" : "success"
+        );
+      }
+
+      function moveWorkbenchMail(direction) {
+        if (!isUnprocessedWorkbench() || activeUnprocessedView === "batch") return;
+        const records = getVisibleMails();
+        const index = records.findIndex((mail) => mail.id === activeMailId);
+        if (index < 0 && direction > 0 && records.length) {
+          setActiveMail(records[0].id);
+          return;
+        }
+        const target = records[index + direction];
+        if (target) setActiveMail(target.id);
       }
 
       function renderBody(mail) {
@@ -3050,7 +4139,7 @@
         const isLlm = mode === "llm";
         const isSaved = mode === "saved";
         const loadingLabel = isSaved
-          ? "正在读取已处理结果"
+          ? "正在读取已保存结果"
           : isLlm
             ? "正在智能识别型号"
             : "正在进行基础规则提取";
@@ -3136,7 +4225,7 @@
         return labels[String(value || "")] || "该条结果需要人工确认";
       }
 
-      function candidateListMarkup(candidates) {
+      function candidateListMarkup(candidates, options = {}) {
         const rows = (Array.isArray(candidates) ? candidates : []).map((candidate) => {
           const catalogDetails = [candidate.product_name, candidate.spec].filter(Boolean);
           const scoreDetails = [
@@ -3144,6 +4233,15 @@
             `规格 ${formatMatchScore(candidate.spec_score)}`
           ];
           const details = [...catalogDetails, ...scoreDetails].join(" · ");
+          const selectAction = options.manualReviewEnabled && options.recognitionItemId
+            ? `
+              <button
+                class="candidate-select-button"
+                type="button"
+                data-confirm-manual-item-id="${options.recognitionItemId}"
+                data-confirm-manual-product-id="${candidate.product_id}"
+              >确认采用</button>`
+            : "";
           return `
             <div class="candidate-item">
               <span class="candidate-rank">${escapeHtml(candidate.rank)}</span>
@@ -3152,6 +4250,7 @@
                 <span class="candidate-meta">${escapeHtml(details)}</span>
               </span>
               <strong class="candidate-score">${formatMatchScore(candidate.final_score)} 分</strong>
+              ${selectAction}
             </div>`;
         }).join("");
         return `<div class="candidate-list">${rows}</div>`;
@@ -3168,7 +4267,34 @@
         }).format(amount);
       }
 
+      function manualItemEditMarkup(item) {
+        if (!item?.recognitionItemId) return "";
+        const quantity = item.quantity ?? "";
+        return `
+          <details class="manual-item-edit">
+            <summary>修正识别信息并重新匹配</summary>
+            <div class="manual-item-edit-grid">
+              <label class="manual-item-edit-field">
+                <span class="manual-item-edit-label">型号</span>
+                <input class="manual-item-edit-input" data-manual-edit-model value="${escapeHtml(item.model || "")}" required>
+              </label>
+              <label class="manual-item-edit-field">
+                <span class="manual-item-edit-label">数量</span>
+                <input class="manual-item-edit-input" data-manual-edit-quantity type="number" min="0.0001" step="any" value="${escapeHtml(quantity)}" required>
+              </label>
+              <label class="manual-item-edit-field">
+                <span class="manual-item-edit-label">单位</span>
+                <input class="manual-item-edit-input" data-manual-edit-unit value="${escapeHtml(item.unit || "")}" required>
+              </label>
+              <button class="manual-item-save-button" type="button" data-save-manual-item-edit data-manual-edit-item-id="${item.recognitionItemId}">保存并重新匹配</button>
+            </div>
+          </details>`;
+      }
+
       function productMatchForItem(match, options = {}) {
+        const manualEdit = options.manualReviewEnabled
+          ? manualItemEditMarkup(options.manualItem)
+          : "";
         if (!match) {
           return `
             <div class="purchase-match-line">
@@ -3176,6 +4302,7 @@
             </div>
             <div class="product-match-panel">
               <p>本条产品尚未生成产品库匹配结果，可点击上方“重新匹配”。</p>
+              ${manualEdit}
             </div>`;
         }
 
@@ -3199,7 +4326,8 @@
               <span class="match-code">产品库 <strong>${escapeHtml(selectedCode)}</strong></span>
               <span class="match-score">${score} 分 · 自动确认</span>
               ${priceMarkup}
-            </div>`;
+            </div>
+            ${manualEdit ? `<div class="product-match-panel">${manualEdit}</div>` : ""}`;
         }
 
         const isNoMatch = match.match_status === "no_match";
@@ -3221,7 +4349,10 @@
           ? `
             <details class="match-candidates">
               <summary>查看 ${candidates.length} 个产品库候选</summary>
-              ${candidateListMarkup(candidates)}
+              ${candidateListMarkup(candidates, {
+                manualReviewEnabled: options.manualReviewEnabled,
+                recognitionItemId: options.recognitionItemId
+              })}
             </details>`
           : `<p>当前产品库中没有可展示的候选产品。</p>`;
 
@@ -3235,6 +4366,7 @@
             <p>${escapeHtml(reviewCopy)}</p>
             ${warningCopy}
             ${candidateDetails}
+            ${manualEdit}
           </div>`;
       }
 
@@ -3291,6 +4423,46 @@
             </svg>
             <span>${loading ? "匹配中" : "重新匹配"}</span>
           </button>`;
+      }
+
+      function canCompleteManualReview(productMatches) {
+        const summary = productMatches?.summary || {};
+        const totalItems = Number(productMatches?.total_items) || 0;
+        return totalItems > 0
+          && Number(summary.exact_match) === totalItems
+          && Number(summary.fuzzy_match) === 0
+          && Number(summary.no_match) === 0
+          && Number(summary.need_manual_review) === 0;
+      }
+
+      function manualReviewControlsMarkup(options = {}) {
+        if (!options.manualReviewEnabled) return "";
+        const ready = canCompleteManualReview(options.productMatches);
+        const summary = options.productMatches?.summary || {};
+        const totalItems = Number(options.productMatches?.total_items) || 0;
+        const pendingCount = (Number(summary.need_manual_review) || 0) + (Number(summary.no_match) || 0);
+        const verifiedCount = Math.max(0, totalItems - pendingCount);
+        const progress = ready
+          ? "全部产品已核验，可结束核验"
+          : pendingCount
+            ? `还有 ${pendingCount} 条产品需要处理`
+            : "请先确认产品匹配结果";
+        return `
+          <section class="manual-review-controls" data-state="${ready ? "ready" : "pending"}" aria-label="人工核验操作">
+            <header class="manual-review-header">
+              <span class="manual-review-eyebrow">人工核验</span>
+              <strong class="manual-review-status">${escapeHtml(progress)}</strong>
+              <span class="manual-review-count">已核验 ${verifiedCount} / ${totalItems || "—"} 条采购项</span>
+            </header>
+            <label class="manual-review-note-field">
+              <span class="manual-review-note-label">核验备注（选填）</span>
+              <textarea class="manual-review-note" data-manual-review-note maxlength="1000" placeholder="记录选择依据、规格差异或后续跟进事项">${escapeHtml(options.reviewNote || "")}</textarea>
+            </label>
+            <div class="manual-review-actions">
+              <button class="manual-review-save-button" type="button" data-save-manual-review>保存备注</button>
+              <button class="manual-review-complete-button" type="button" data-complete-manual-review aria-label="确认核验结果并结束核验" title="${escapeHtml(ready ? "确认核验结果，并将邮件移出人工核验队列" : progress)}" ${ready ? "" : "disabled"}>确认核验结果，结束核验</button>
+            </div>
+          </section>`;
       }
 
       function productMatchSummary(options = {}) {
@@ -3374,7 +4546,15 @@
             ? productMatchForItem(matchItem?.match, {
                 showQuote: options.showQuote,
                 quoteLine: quoteLinesByLine.get(lineNo),
-                currency: quote?.currency || "CNY"
+                currency: quote?.currency || "CNY",
+                manualReviewEnabled: options.manualReviewEnabled,
+                recognitionItemId: matchItem?.recognition_item_id,
+                manualItem: {
+                  recognitionItemId: matchItem?.recognition_item_id,
+                  model,
+                  quantity: item.quantity,
+                  unit: item.unit
+                }
               })
             : "";
           const copyValue = [model, secondaryName, hasQuantity ? `${quantity}${unit ? ` ${unit}` : ""}` : "数量待确认"]
@@ -3410,6 +4590,7 @@
               ${productMatchSummary(options)}
               <div class="purchase-list">${itemRows}</div>
               ${preliminaryQuoteSummary(options)}
+              ${manualReviewControlsMarkup(options)}
             </div>
           </div>`;
       }
@@ -3461,7 +4642,7 @@
           || payload.processing?.mode === "saved_result";
         const isCacheHit = payload.processing?.cache_hit === true;
         const completedSourceLabel = isSavedResult
-          ? "已处理结果已载入"
+          ? "已保存结果已载入"
           : isCacheHit
           ? "已复用识别结果"
           : isFastPath
@@ -3476,6 +4657,7 @@
           unit: item.unit || ""
         }));
         const recognitionOrderId = options.recognitionOrderId || getRecognitionOrderId(payload);
+        const workflow = getMailWorkflow(mail.id);
         const requirements = draft.requirements || {};
         const attachments = getRealAttachments(mail).map((item) => item.name);
         const requirementTags = [
@@ -3495,7 +4677,9 @@
             productMatches: options.productMatches,
             recognitionOrderId,
             mailId: mail.id,
-            showQuote: isSavedResult
+            showQuote: isSavedResult,
+            manualReviewEnabled: workflow.status === "manual_review",
+            reviewNote: workflow.review_note || ""
           }),
           resultRow({ icon: "user", label: "联系人", value: requirements.contact_person || getDisplayName(mail.sender), wide: true }),
           resultRow({ icon: "flag", label: "重点要求", tags: requirementTags.length ? requirementTags : ["未发现额外要求"], wide: true })
@@ -3541,6 +4725,18 @@
         elements.extractionResult.querySelectorAll("[data-rematch-order-id]").forEach((button) => {
           button.addEventListener("click", () => rematchProducts(button));
         });
+        elements.extractionResult.querySelectorAll("[data-confirm-manual-item-id]").forEach((button) => {
+          button.addEventListener("click", () => confirmManualReviewCandidate(button));
+        });
+        elements.extractionResult.querySelectorAll("[data-save-manual-item-edit]").forEach((button) => {
+          button.addEventListener("click", () => saveManualReviewItemEdit(button));
+        });
+        elements.extractionResult.querySelectorAll("[data-save-manual-review]").forEach((button) => {
+          button.addEventListener("click", () => saveManualReviewNote(button));
+        });
+        elements.extractionResult.querySelectorAll("[data-complete-manual-review]").forEach((button) => {
+          button.addEventListener("click", () => completeManualReview(button));
+        });
       }
 
       function renderDraftMatchState(mail, payload, matchingState, options = {}) {
@@ -3575,56 +4771,10 @@
         };
       }
 
-      function canAutoProcessAfterMatching(result) {
-        const totalItems = Number(result?.total_items) || 0;
-        const summary = result?.summary || {};
-        const exactMatches = Number(summary.exact_match) || 0;
-        const fuzzyMatches = Number(summary.fuzzy_match) || 0;
-        const noMatches = Number(summary.no_match) || 0;
-        const manualReviews = Number(summary.need_manual_review) || 0;
-        return totalItems > 0
-          && exactMatches === totalItems
-          && fuzzyMatches === 0
-          && noMatches === 0
-          && manualReviews === 0;
-      }
-
       function updateProcessingAfterRecognition(mail, result) {
         if (!mail || mail.id !== activeMailId) return;
-        const summary = result?.summary || {};
-        const fuzzyMatches = Number(summary.fuzzy_match) || 0;
-        const noMatches = Number(summary.no_match) || 0;
-
-        if (!canAutoProcessAfterMatching(result)) {
-          const wasProcessed = processedMailIds.delete(mail.id);
-          if (wasProcessed) {
-            persistMailStatus();
-            updateProcessedState();
-            renderList();
-          }
-          const locationCopy = wasProcessed ? "已移回未处理" : "已保留在未处理";
-          if (fuzzyMatches) {
-            showToast(`存在 ${fuzzyMatches} 条模糊匹配，邮件${locationCopy}`, "warning");
-          } else if (noMatches) {
-            showToast(`存在 ${noMatches} 条未匹配产品，邮件${locationCopy}`, "warning");
-          } else {
-            showToast(`产品匹配仍需人工确认，邮件${locationCopy}`, "warning");
-          }
-          return;
-        }
-
-        const wasProcessed = processedMailIds.has(mail.id);
-        processedMailIds.add(mail.id);
-        newMailIds.delete(mail.id);
-        persistMailStatus();
-        updateProcessedState();
+        updateWorkflowActionState();
         renderList();
-        showToast(
-          wasProcessed
-            ? "智能识别和产品匹配已完成，邮件保持为已处理"
-            : "智能识别和产品匹配已完成，邮件已自动标记为已处理",
-          "success"
-        );
       }
 
       async function loadProductMatches(mail, payload, extractionRequestId) {
@@ -3692,6 +4842,126 @@
             matchingError: error.message || "重新匹配失败"
           });
           showToast(error.message || "重新匹配失败，请稍后重试", "error");
+        }
+      }
+
+      function getManualReviewNote() {
+        return elements.extractionResult.querySelector("[data-manual-review-note]")?.value || "";
+      }
+
+      async function requestManualReviewChange(mail, input = {}) {
+        const response = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/manual-review`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "人工核验保存失败");
+        if (result.workflow) setMailWorkflow(result.workflow);
+        return result;
+      }
+
+      function renderManualReviewChange(mail, result) {
+        const payload = draftPayloadByMailId.get(mail.id);
+        if (!payload || mail.id !== activeMailId) return;
+        const workflow = getMailWorkflow(mail.id);
+        if (workflow.status === "pending_confirmation" && activeFolder === "manual_review") {
+          const nextManualMail = getVisibleMails()[0] || null;
+          setActiveMail(nextManualMail?.id || "");
+          return;
+        }
+        renderDraftMatchState(mail, payload, "ready", {
+          productMatches: result.product_matches
+        });
+        updateWorkflowActionState();
+        renderList();
+      }
+
+      async function confirmManualReviewCandidate(button) {
+        const mail = getActiveMail();
+        const recognitionItemId = Number(button.dataset.confirmManualItemId);
+        const selectedProductId = Number(button.dataset.confirmManualProductId);
+        if (!mail || !recognitionItemId || !selectedProductId) {
+          showToast("当前邮件或候选产品已变化，请重新打开人工核验", "warning");
+          return;
+        }
+        button.disabled = true;
+        try {
+          const result = await requestManualReviewChange(mail, {
+            confirmations: [{
+              recognition_item_id: recognitionItemId,
+              selected_product_id: selectedProductId
+            }],
+            review_note: getManualReviewNote()
+          });
+          renderManualReviewChange(mail, result);
+          showToast(result.can_complete ? "候选产品已确认，可完成核验" : "候选产品已确认，请继续核验其他产品", "success");
+        } catch (error) {
+          showToast(error.message || "候选产品确认失败", "error");
+          button.disabled = false;
+        }
+      }
+
+      async function saveManualReviewItemEdit(button) {
+        const mail = getActiveMail();
+        const editor = button.closest(".manual-item-edit");
+        const recognitionItemId = Number(button.dataset.manualEditItemId);
+        const productModel = editor?.querySelector("[data-manual-edit-model]")?.value?.trim() || "";
+        const quantity = editor?.querySelector("[data-manual-edit-quantity]")?.value || "";
+        const unit = editor?.querySelector("[data-manual-edit-unit]")?.value?.trim() || "";
+        if (!mail || !recognitionItemId || !productModel || !unit || !(Number(quantity) > 0)) {
+          showToast("请填写型号、正数数量和单位", "warning");
+          return;
+        }
+        button.disabled = true;
+        try {
+          const result = await requestManualReviewChange(mail, {
+            item_edit: {
+              recognition_item_id: recognitionItemId,
+              product_model: productModel,
+              quantity: Number(quantity),
+              unit
+            },
+            review_note: getManualReviewNote()
+          });
+          renderManualReviewChange(mail, result);
+          showToast(result.can_complete ? "识别信息已修正，产品匹配已完成" : "识别信息已修正，已重新生成产品候选", "success");
+        } catch (error) {
+          showToast(error.message || "识别信息修改失败", "error");
+          button.disabled = false;
+        }
+      }
+
+      async function saveManualReviewNote(button) {
+        const mail = getActiveMail();
+        if (!mail) return;
+        button.disabled = true;
+        try {
+          const result = await requestManualReviewChange(mail, {
+            review_note: getManualReviewNote()
+          });
+          renderManualReviewChange(mail, result);
+          showToast("核验备注已保存", "success");
+        } catch (error) {
+          showToast(error.message || "核验备注保存失败", "error");
+          button.disabled = false;
+        }
+      }
+
+      async function completeManualReview(button) {
+        const mail = getActiveMail();
+        if (!mail) return;
+        button.disabled = true;
+        try {
+          const result = await requestManualReviewChange(mail, {
+            complete: true,
+            review_note: getManualReviewNote()
+          });
+          renderManualReviewChange(mail, result);
+          showToast("人工核验已完成，邮件已移出人工核验队列", "success");
+        } catch (error) {
+          showToast(error.message || "无法完成核验", "error");
+          button.disabled = false;
         }
       }
 
@@ -3763,7 +5033,7 @@
       function renderSavedResultUnavailable({ error = false, message = "" } = {}) {
         setExtractionStatus(
           error ? "error" : "warning",
-          error ? "已处理结果读取失败" : "暂无已保存的识别结果"
+          error ? "已保存结果读取失败" : "暂无已保存的识别结果"
         );
         setExtractionAction("智能识别型号");
         elements.extractionResult.innerHTML = `
@@ -3773,7 +5043,7 @@
               <strong>${error ? "暂时无法读取匹配结果" : "这封邮件还没有订单匹配结果"}</strong>
               <p>${escapeHtml(message || (error
                 ? "请稍后重试，或点击“智能识别型号”重新生成结果。"
-                : "它可能是手动标记为已处理的邮件。点击“智能识别型号”即可生成订单和产品匹配结果。"))}</p>
+                : "这封邮件还没有可用的订单匹配结果。点击“智能识别型号”即可重新生成。"))}</p>
             </div>
           </div>`;
       }
@@ -3796,7 +5066,7 @@
             return;
           }
           if (!response.ok) {
-            throw new Error(result.error || "已处理结果读取失败");
+            throw new Error(result.error || "已保存结果读取失败");
           }
 
           const payload = buildSavedRecognitionPayload(
@@ -3845,6 +5115,7 @@
           if (requestId !== currentExtractionRequest || mail.id !== activeMailId) return;
 
           if (options.deep && ["success", "partial_success"].includes(payload.status) && payload.order_draft) {
+            setMailWorkflow(payload.workflow);
             if (extractionCacheEnabled) {
               extractionCache.set(mail.id, { kind: "draft", payload });
             }
@@ -3854,7 +5125,11 @@
             const isCacheHit = payload.processing?.cache_hit === true;
             const recognitionOrderId = getRecognitionOrderId(payload);
             const matchingFailed = payload.persistence?.product_matching?.status === "failed";
+            const workflow = getMailWorkflow(mail.id);
             draftPayloadByMailId.set(mail.id, payload);
+            if (workflow.status === "manual_review") {
+              renderList();
+            }
             const recognizedModelCount = renderDraftMatchState(
               mail,
               payload,
@@ -3864,21 +5139,20 @@
                 : {}
             );
             showToast(
-              recognizedModelCount
-                ? isPartial
-                  ? `部分识别完成：已保留 ${recognizedModelCount} 个产品型号`
-                  : isCacheHit
-                    ? `已复用识别结果：找到 ${recognizedModelCount} 个产品型号`
-                    : isFastPath
-                      ? `快速识别完成：找到 ${recognizedModelCount} 个产品型号`
-                      : `DeepSeek 识别完成：找到 ${recognizedModelCount} 个产品型号`
-                : "智能识别完成，但未识别到明确型号",
-              recognizedModelCount && !isPartial ? "success" : "warning"
+              workflow.status === "pending_confirmation"
+                ? "DeepSeek 识别和产品精确匹配已完成，邮件已核验"
+                : workflow.status === "manual_review"
+                  ? "识别结果已保存，邮件已转入人工核验；可继续处理下一封"
+                  : recognizedModelCount
+                    ? `识别完成：已保留 ${recognizedModelCount} 个产品型号`
+                    : "智能识别完成，但未识别到明确型号",
+              workflow.status === "pending_confirmation" ? "success" : "warning"
             );
             if (recognitionOrderId && !matchingFailed) {
               await loadProductMatches(mail, payload, requestId);
             }
           } else if (options.deep) {
+            setMailWorkflow(payload.workflow);
             const fallbackResponse = await fetch(`/api/mail/${encodeURIComponent(mail.id)}/analyze-order`, { method: "POST" });
             const fallback = await fallbackResponse.json();
             if (!fallbackResponse.ok) throw new Error("提取失败");
@@ -3886,7 +5160,7 @@
               extractionCache.set(mail.id, { kind: "analysis", source: "llm-fallback", payload: fallback });
             }
             renderAnalyzedResult(mail, fallback, { source: "llm-fallback" });
-            showToast("LLM 识别未完成，当前显示基础规则结果", "warning");
+            showToast("DeepSeek 识别失败，当前显示基础规则结果；邮件保留为未处理", "warning");
           } else {
             if (extractionCacheEnabled) {
               extractionCache.set(mail.id, { kind: "analysis", source: "base", payload });
@@ -3912,7 +5186,7 @@
         renderReader(mail);
         if (mail) {
           elements.body.classList.add("mail-open");
-          if (processedMailIds.has(mail.id)) {
+          if (getMailWorkflow(mail.id).recognition_order_id) {
             loadSavedOrderResult(mail);
           } else {
             loadExtraction(mail);
@@ -3925,6 +5199,9 @@
       function selectFolder(folder = "inbox", label = "") {
         activeFolder = folder;
         activeLabel = label;
+        if (folder === "unprocessed" && !label) {
+          activeUnprocessedView = "manual";
+        }
         elements.search.value = "";
         document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
         const selector = label ? `[data-label="${label}"]` : `[data-folder="${folder}"]`;
@@ -3942,34 +5219,50 @@
         elements.inlineStarButton.setAttribute("aria-label", isStarred ? "取消收藏" : "收藏邮件");
       }
 
-      function updateProcessedState() {
-        const isProcessed = processedMailIds.has(activeMailId);
-        const label = isProcessed ? "标记为未处理" : "标记为已处理";
-        elements.processedButton.classList.toggle("active", isProcessed);
-        elements.processedButton.setAttribute("aria-label", label);
-        elements.processedButton.title = label;
+      function updateWorkflowActionState() {
+        const workflow = getMailWorkflow(activeMailId);
+        const isNotApplicable = workflow.status === "not_applicable";
+        elements.notApplicableButton.classList.toggle("active", isNotApplicable);
+        elements.notApplicableButton.setAttribute("aria-label", isNotApplicable ? "恢复到待识别" : "标记为无需处理");
+        elements.notApplicableButton.title = isNotApplicable ? "恢复到待识别" : "标记为无需处理";
       }
 
-      function toggleProcessed() {
-        if (!activeMailId) return;
-        const wasProcessed = processedMailIds.has(activeMailId);
-        if (wasProcessed) {
-          processedMailIds.delete(activeMailId);
-          showToast("已标记为未处理");
-        } else {
-          processedMailIds.add(activeMailId);
-          newMailIds.delete(activeMailId);
-          showToast("已标记为已处理", "success");
+      async function toggleNotApplicable() {
+        const mail = getActiveMail();
+        if (!mail) return;
+        const isNotApplicable = getMailWorkflow(mail.id).status === "not_applicable";
+        const advancesWorkbench = !isNotApplicable
+          && ["unprocessed", "manual_review"].includes(activeFolder);
+        elements.notApplicableButton.disabled = true;
+        try {
+          await requestWorkflowChange(mail, isNotApplicable ? "pending_recognition" : "not_applicable");
+          if (isNotApplicable) {
+            showToast("邮件已恢复到待识别", "success");
+          } else {
+            newMailIds.delete(mail.id);
+            persistMailStatus();
+            const next = advancesWorkbench
+              ? getVisibleMails().find((item) => item.id !== mail.id)
+              : null;
+            showToast(
+              next
+                ? "已标记为无需处理，已打开下一封"
+                : advancesWorkbench
+                  ? "已标记为无需处理，当前队列已处理完"
+                  : "已标记为无需处理",
+              "success"
+            );
+            if (advancesWorkbench) {
+              setActiveMail(next?.id || "");
+              return;
+            }
+          }
+          updateWorkflowActionState();
+          renderList();
+        } catch (error) {
+          showToast(error.message || "邮件状态更新失败", "error");
+          updateWorkflowActionState();
         }
-        persistMailStatus();
-        updateProcessedState();
-
-        if ((activeFolder === "unprocessed" && !wasProcessed) || (activeFolder === "processed" && wasProcessed) || (activeFolder === "new" && !wasProcessed)) {
-          const next = getVisibleMails().find((mail) => mail.id !== activeMailId);
-          setActiveMail(next?.id || "");
-          return;
-        }
-        renderList();
       }
 
       function toggleStar() {
@@ -4057,11 +5350,13 @@
 
       function renderMailConfig(config) {
         if (!config) {
+          currentMailConfig = null;
           elements.connectionEmail.textContent = "连接状态待确认";
           elements.mailConfigSummary.innerHTML = `
             <div class="connection-row"><span>连接状态</span><strong>暂时无法读取</strong></div>`;
           return;
         }
+        currentMailConfig = config;
         const email = config.email || config.agent?.alias || "当前邮箱";
         const receiveReady = config.mode === "imap_smtp" ? Boolean(config.imap?.configured) : true;
         const sendReady = config.mode === "imap_smtp" ? Boolean(config.smtp?.configured) : true;
@@ -4070,6 +5365,84 @@
           <div class="connection-row"><span>邮箱账户</span><strong>${escapeHtml(email)}</strong></div>
           <div class="connection-row"><span>接收邮件</span><strong>${receiveReady ? "已就绪" : "需要检查连接"}</strong></div>
           <div class="connection-row"><span>发送邮件</span><strong>${sendReady ? "已就绪" : "需要检查连接"}</strong></div>`;
+      }
+
+      function fillMailboxConfigForm(config = currentMailConfig) {
+        const imap = config?.imap || {};
+        const smtp = config?.smtp || {};
+        elements.mailboxEmail.value = config?.email || "";
+        elements.imapHost.value = imap.host || "";
+        elements.imapPort.value = imap.port || 993;
+        elements.imapMailbox.value = imap.mailbox || "INBOX";
+        elements.imapSecure.checked = imap.secure !== false;
+        elements.smtpHost.value = smtp.host || "";
+        elements.smtpPort.value = smtp.port || 465;
+        elements.smtpSecure.checked = smtp.secure !== false;
+        elements.mailAuthCode.value = "";
+        elements.clearImportedMails.checked = false;
+      }
+
+      function openMailboxSwitch() {
+        fillMailboxConfigForm();
+        elements.mailboxSwitch.hidden = false;
+        elements.mailboxSwitchButton.hidden = true;
+        window.setTimeout(() => elements.mailboxEmail.focus(), 30);
+      }
+
+      function closeMailboxSwitch() {
+        elements.mailboxConfigForm.reset();
+        elements.mailboxSwitch.hidden = true;
+        elements.mailboxSwitchButton.hidden = false;
+      }
+
+      async function saveMailboxConfig(event) {
+        event.preventDefault();
+        const clearImportedMails = elements.clearImportedMails.checked;
+        const payload = {
+          email: elements.mailboxEmail.value.trim(),
+          imapHost: elements.imapHost.value.trim(),
+          imapPort: elements.imapPort.value,
+          imapMailbox: elements.imapMailbox.value.trim(),
+          imapSecure: elements.imapSecure.checked,
+          smtpHost: elements.smtpHost.value.trim(),
+          smtpPort: elements.smtpPort.value,
+          smtpSecure: elements.smtpSecure.checked,
+          authCode: elements.mailAuthCode.value,
+          clear_imported_mails: clearImportedMails
+        };
+        elements.mailboxSaveButton.disabled = true;
+        elements.mailboxSaveButton.textContent = "保存中…";
+        try {
+          const response = await fetch("/api/mail/config", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "邮箱配置保存失败");
+          renderMailConfig(result.config);
+          closeMailboxSwitch();
+          if (clearImportedMails) {
+            mailRecords = [];
+            mailWorkflowById.clear();
+            activeMailId = "";
+            extractionCache.clear();
+            draftPayloadByMailId.clear();
+            elements.source.textContent = "等待同步";
+            selectFolder("inbox");
+          }
+          showToast(
+            clearImportedMails
+              ? "邮箱已切换，本地邮件列表已清空，请同步新邮箱"
+              : "邮箱已切换。当前保留本地邮件列表，点击同步可获取新邮箱邮件",
+            "success"
+          );
+        } catch (error) {
+          showToast(error.message || "邮箱配置保存失败，请检查填写内容", "error");
+        } finally {
+          elements.mailboxSaveButton.disabled = false;
+          elements.mailboxSaveButton.textContent = "保存并切换";
+        }
       }
 
       async function loadMailConfig() {
@@ -4105,6 +5478,7 @@
           if (!response.ok) throw new Error("服务暂未启动");
           const payload = await response.json();
           mailRecords = Array.isArray(payload.mails) ? payload.mails : [];
+          await loadMailWorkflows();
           reconcileMailStatus();
           elements.source.textContent = mailRecords.length ? "已同步" : "等待同步";
           selectFolder("inbox");
@@ -4134,6 +5508,7 @@
           const payload = await response.json();
           if (!response.ok) throw new Error(payload.error || "同步失败");
           mailRecords = payload.mails || [];
+          await loadMailWorkflows();
           reconcileMailStatus();
           extractionCache.clear();
           elements.source.textContent = "刚刚同步";
@@ -4167,7 +5542,7 @@
       });
       elements.importButton.addEventListener("click", importInbox);
       elements.composeButton?.addEventListener("click", () => openCompose("new"));
-      elements.processedButton.addEventListener("click", toggleProcessed);
+      elements.notApplicableButton.addEventListener("click", toggleNotApplicable);
       elements.replyButton.addEventListener("click", () => openCompose("reply"));
       elements.forwardButton.addEventListener("click", () => openCompose("forward"));
       elements.starButton.addEventListener("click", toggleStar);
@@ -4185,20 +5560,38 @@
           loadExtraction(mail, { force: true, deep: true });
         }
       });
-      elements.guideButton.addEventListener("click", () => showDialog(elements.guideDialog));
-      elements.guideCloseButton.addEventListener("click", () => closeDialog(elements.guideDialog));
+      elements.guideButton.addEventListener("click", async () => {
+        await loadMailConfig();
+        showDialog(elements.guideDialog);
+      });
+      elements.guideCloseButton.addEventListener("click", () => {
+        closeMailboxSwitch();
+        closeDialog(elements.guideDialog);
+      });
+      elements.mailboxSwitchButton.addEventListener("click", openMailboxSwitch);
+      elements.mailboxSwitchCancelButton.addEventListener("click", closeMailboxSwitch);
+      elements.mailboxConfigForm.addEventListener("submit", saveMailboxConfig);
       elements.composeCloseButton.addEventListener("click", () => closeDialog(elements.composeDialog));
       elements.composeCancelButton.addEventListener("click", () => closeDialog(elements.composeDialog));
       elements.composeForm.addEventListener("submit", sendMail);
       elements.mobileMenuButton.addEventListener("click", () => elements.body.classList.add("nav-open"));
       elements.mobileScrim.addEventListener("click", () => elements.body.classList.remove("nav-open"));
       elements.mobileBackButton.addEventListener("click", () => elements.body.classList.remove("mail-open"));
+      elements.workbenchExitButton.addEventListener("click", () => {
+        selectFolder("inbox");
+      });
+      elements.workbenchPreviousButton.addEventListener("click", () => moveWorkbenchMail(-1));
+      elements.workbenchNextButton.addEventListener("click", () => moveWorkbenchMail(1));
+      elements.singleProcessingViewButton.addEventListener("click", () => setUnprocessedView("manual"));
+      elements.batchViewButton.addEventListener("click", () => setUnprocessedView("batch"));
+      elements.batchProcessAllButton.addEventListener("click", processAllUnprocessedMails);
 
       [elements.guideDialog, elements.composeDialog].forEach((dialog) => {
         dialog.addEventListener("click", (event) => {
           if (event.target === dialog) closeDialog(dialog);
         });
       });
+      elements.guideDialog.addEventListener("close", closeMailboxSwitch);
 
       renderList();
       renderReader(null);

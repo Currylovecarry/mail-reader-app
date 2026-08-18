@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 export const dataDir = path.join(__dirname, "data");
 export const dataFile = path.join(dataDir, "imported-mails.json");
 export const attachmentDir = path.join(__dirname, "imported-attachments");
+const envFile = path.join(__dirname, ".env");
 
 const defaultAgentAlias = "cq7777@agent.qq.com";
 
@@ -21,7 +22,6 @@ export async function ensureStorage() {
 }
 
 export async function loadDotEnv() {
-  const envFile = path.join(__dirname, ".env");
   let content = "";
 
   try {
@@ -56,6 +56,100 @@ export async function loadDotEnv() {
       process.env[key] = value;
     }
   }
+}
+
+function requiredConfigValue(value, label, { maxLength = 255 } = {}) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    throw new Error(`请填写${label}`);
+  }
+  if (normalized.length > maxLength || /[\r\n]/.test(normalized)) {
+    throw new Error(`${label}格式不正确`);
+  }
+  return normalized;
+}
+
+function normalizePort(value, label) {
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`${label}必须是 1 到 65535 之间的整数`);
+  }
+  return String(port);
+}
+
+function normalizeSecure(value) {
+  return ![false, 0, "0", "false", "off", "no"].includes(value);
+}
+
+function replaceEnvValues(content, updates) {
+  const seen = new Set();
+  const lines = String(content || "").split(/\r?\n/).map((line) => {
+    const key = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/)?.[1];
+    if (!key || !(key in updates)) {
+      return line;
+    }
+    seen.add(key);
+    return `${key}=${updates[key]}`;
+  });
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (!seen.has(key)) {
+      lines.push(`${key}=${value}`);
+    }
+  }
+  return `${lines.join("\n").replace(/\n+$/, "")}\n`;
+}
+
+export function normalizeMailboxConfig(input = {}) {
+  const email = requiredConfigValue(input.email, "邮箱地址");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("邮箱地址格式不正确");
+  }
+
+  const imapHost = requiredConfigValue(input.imapHost, "IMAP 服务器地址");
+  const smtpHost = requiredConfigValue(input.smtpHost, "SMTP 服务器地址");
+  if (/\s/.test(imapHost) || /\s/.test(smtpHost)) {
+    throw new Error("服务器地址不能包含空格");
+  }
+
+  return {
+    MAIL_MODE: "imap_smtp",
+    MAIL_EMAIL: email,
+    IMAP_HOST: imapHost,
+    IMAP_PORT: normalizePort(input.imapPort, "IMAP 端口"),
+    IMAP_SECURE: String(normalizeSecure(input.imapSecure)),
+    IMAP_MAILBOX: requiredConfigValue(input.imapMailbox || "INBOX", "收件箱文件夹"),
+    SMTP_HOST: smtpHost,
+    SMTP_PORT: normalizePort(input.smtpPort, "SMTP 端口"),
+    SMTP_SECURE: String(normalizeSecure(input.smtpSecure)),
+    MAIL_AUTH_CODE: requiredConfigValue(input.authCode, "邮箱授权码", { maxLength: 512 })
+  };
+}
+
+export async function saveMailboxConfig(input = {}) {
+  const updates = normalizeMailboxConfig(input);
+  let existing = "";
+  try {
+    existing = await fs.readFile(envFile, "utf8");
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      throw error;
+    }
+  }
+
+  const temporaryFile = `${envFile}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fs.writeFile(temporaryFile, replaceEnvValues(existing, updates), {
+      encoding: "utf8",
+      mode: 0o600
+    });
+    await fs.rename(temporaryFile, envFile);
+  } finally {
+    await fs.rm(temporaryFile, { force: true }).catch(() => {});
+  }
+
+  Object.assign(process.env, updates);
+  return getPublicMailConfig(getMailConfig());
 }
 
 function toBoolean(value, fallback = false) {
@@ -195,6 +289,17 @@ export async function readStoredMails() {
 async function writeStoredMails(payload) {
   await ensureStorage();
   await fs.writeFile(dataFile, JSON.stringify(payload, null, 2), "utf8");
+}
+
+export async function clearImportedMailCache() {
+  await writeStoredMails({
+    mails: [],
+    syncState: {
+      processedKeys: [],
+      latestUid: 0,
+      lastSyncAt: ""
+    }
+  });
 }
 
 function runAgently(args) {

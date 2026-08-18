@@ -5,12 +5,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   attachmentDir,
+  clearImportedMailCache,
   ensureStorage,
   getMailConfig,
   getPublicMailConfig,
   importInbox,
   loadDotEnv,
   readStoredMails,
+  saveMailboxConfig,
   sendSmtpMail
 } from "./mail-service.mjs";
 import { extractEmailContent } from "./content-extractor.mjs";
@@ -18,6 +20,7 @@ import { analyzeOrderContent } from "./order-analysis-service.mjs";
 import { generateOrderDraft } from "./llm-order-draft-service.mjs";
 import { orderRecognitionRepository } from "./order-recognition-repository.mjs";
 import { productMatchingService } from "./product-matching-service.mjs";
+import { mailWorkflowRepository } from "./mail-workflow-repository.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,15 +78,18 @@ function isOrderDraftCacheEnabled() {
 async function generateAndPersistOrderDraft(mail) {
   const extracted = await extractEmailContent(mail);
   const payload = await generateOrderDraft(extracted);
+  let savedRecord = null;
+  let matches = null;
   if (["success", "partial_success"].includes(payload.status) && payload.order_draft) {
     const record = await orderRecognitionRepository.saveOrderDraft(payload.order_draft);
+    savedRecord = record;
     payload.persistence = {
       status: "saved",
       result_status: payload.status,
       recognition_order_id: record.id
     };
     try {
-      const matches = await productMatchingService.matchOrderRecognition(record.id);
+      matches = await productMatchingService.matchOrderRecognition(record.id);
       payload.persistence.product_matching = {
         status: "matched",
         summary: matches.summary
@@ -96,7 +102,72 @@ async function generateAndPersistOrderDraft(mail) {
       };
     }
   }
+  payload.workflow = await recordRecognitionWorkflow(payload, savedRecord, matches);
   return payload;
+}
+
+function isCompleteDeepSeekOrder(payload, matches) {
+  const products = payload?.order_draft?.products;
+  const summary = matches?.summary || {};
+  const totalItems = Number(matches?.total_items) || 0;
+  return payload?.status === "success"
+    && payload?.provider === "openai_compatible"
+    && Array.isArray(products)
+    && products.length > 0
+    && products.every((product) =>
+      String(product?.product_model || "").trim()
+      && String(product?.product_name || "").trim()
+      && Number.isFinite(Number(product?.quantity))
+      && Number(product.quantity) > 0
+      && String(product?.unit || "").trim()
+      && Number(product?.confidence) >= 0.8
+      && String(product?.evidence?.source || "").trim()
+      && String(product?.evidence?.raw_text || "").trim()
+    )
+    && totalItems === products.length
+    && Number(summary.exact_match) === totalItems
+    && Number(summary.fuzzy_match) === 0
+    && Number(summary.no_match) === 0
+    && Number(summary.need_manual_review) === 0;
+}
+
+function deriveWorkflow(payload, record, matches) {
+  if (!["success", "partial_success"].includes(payload?.status) || !payload?.order_draft) {
+    return {
+      status: "recognition_failed",
+      reason: payload?.error || "DeepSeek 未返回可用的订单识别结果"
+    };
+  }
+  if (!record || !matches) {
+    return {
+      status: "manual_review",
+      reason: "订单结果尚未完成保存或产品匹配，需要人工核验"
+    };
+  }
+  if (isCompleteDeepSeekOrder(payload, matches)) {
+    return {
+      status: "pending_confirmation",
+      reason: "DeepSeek 识别和产品精确匹配已完成，邮件已核验"
+    };
+  }
+  return {
+    status: "manual_review",
+    reason: payload.provider === "openai_compatible"
+      ? "DeepSeek 结果不完整或产品匹配存在待核验项"
+      : "本地快速识别结果需要 DeepSeek 或人工复核"
+  };
+}
+
+async function recordRecognitionWorkflow(payload, record, matches) {
+  const workflow = deriveWorkflow(payload, record, matches);
+  return mailWorkflowRepository.upsertWorkflow({
+    emailId: payload?.email_id,
+    status: workflow.status,
+    recognitionOrderId: record?.id ?? null,
+    recognitionProvider: payload?.provider || "",
+    recognitionStatus: payload?.status || "",
+    reason: workflow.reason
+  });
 }
 
 function addRequestPerformance(payload, { cacheEnabled, cacheHit, sharedRequest, durationMs }) {
@@ -172,10 +243,110 @@ function findStoredMail(stored, emailId) {
   return (Array.isArray(stored.mails) ? stored.mails : []).find((mail) => mail.id === decodedId);
 }
 
+async function updateWorkflowFromUser(emailId, requestedStatus) {
+  const current = await mailWorkflowRepository.getWorkflowByEmailId(emailId);
+  if (requestedStatus === "pending_recognition") {
+    if (current?.status !== "not_applicable") {
+      throw new Error("只有无需处理邮件才能恢复到待识别状态");
+    }
+  } else if (requestedStatus !== "not_applicable") {
+    throw new Error("不支持的人工状态变更");
+  }
+
+  return mailWorkflowRepository.upsertWorkflow({
+    emailId,
+    status: requestedStatus,
+    reason: requestedStatus === "not_applicable"
+      ? "人工标记为无需处理"
+      : "已恢复到待识别状态"
+  });
+}
+
+function normalizeReviewNote(value) {
+  const note = String(value || "").trim();
+  if (note.length > 1000) {
+    throw new Error("核验备注不能超过 1000 个字符");
+  }
+  return note;
+}
+
+function canCompleteManualReview(productMatches) {
+  const summary = productMatches?.summary || {};
+  const totalItems = Number(productMatches?.total_items) || 0;
+  return totalItems > 0
+    && Number(summary.exact_match) === totalItems
+    && Number(summary.fuzzy_match) === 0
+    && Number(summary.no_match) === 0
+    && Number(summary.need_manual_review) === 0;
+}
+
+async function updateManualReviewFromUser(emailId, body) {
+  const current = await mailWorkflowRepository.getWorkflowByEmailId(emailId);
+  if (current?.status !== "manual_review") {
+    throw new Error("只有人工核验中的邮件可以修改核验结果");
+  }
+
+  const reviewNote = body?.review_note !== undefined
+    ? normalizeReviewNote(body.review_note)
+    : current.review_note || "";
+  const confirmations = Array.isArray(body?.confirmations) ? body.confirmations : [];
+  const itemEdit = body?.item_edit && typeof body.item_edit === "object"
+    ? body.item_edit
+    : null;
+  if (itemEdit && confirmations.length) {
+    throw new Error("请先保存识别信息修改，再确认产品候选");
+  }
+  let recognitionOrderId = Number(current.recognition_order_id) || 0;
+  if (!recognitionOrderId) {
+    const recognition = await orderRecognitionRepository.getOrderRecognitionByEmailId(emailId);
+    recognitionOrderId = Number(recognition?.id) || 0;
+  }
+  if (!recognitionOrderId) {
+    throw new Error("该邮件没有可供人工核验的订单识别结果");
+  }
+
+  let productMatches;
+  if (itemEdit) {
+    const updatedOrder = await orderRecognitionRepository.updateOrderRecognitionItem(recognitionOrderId, {
+      recognitionItemId: itemEdit.recognition_item_id,
+      productModel: itemEdit.product_model,
+      quantity: itemEdit.quantity,
+      unit: itemEdit.unit
+    });
+    if (!updatedOrder) {
+      throw new Error("待修改的产品不存在");
+    }
+    recognitionOrderId = updatedOrder.id;
+    productMatches = await productMatchingService.matchOrderRecognition(recognitionOrderId);
+  } else {
+    productMatches = confirmations.length
+      ? await productMatchingService.confirmManualMatches(recognitionOrderId, confirmations)
+      : await productMatchingService.getOrderMatches(recognitionOrderId);
+  }
+  if (!productMatches) {
+    throw new Error("产品匹配结果不存在，请重新识别后再试");
+  }
+
+  const complete = body?.complete === true;
+  const canComplete = canCompleteManualReview(productMatches);
+  if (complete && !canComplete) {
+    throw new Error("仍有待核验或未匹配产品，暂时不能完成核验");
+  }
+
+  const workflow = await mailWorkflowRepository.upsertWorkflow({
+    emailId,
+    status: complete ? "pending_confirmation" : "manual_review",
+    reason: complete ? "人工核验已完成，可删除邮件" : undefined,
+    reviewNote
+  });
+  return { workflow, productMatches, can_complete: canComplete };
+}
+
 await loadDotEnv();
 await ensureStorage();
 await orderRecognitionRepository.ensureStorage();
 await productMatchingService.ensureStorage();
+await mailWorkflowRepository.ensureStorage();
 
 const server = createServer(async (request, response) => {
   try {
@@ -196,6 +367,63 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/mail/config") {
       sendJson(response, 200, getPublicMailConfig(getMailConfig()));
+      return;
+    }
+
+    if (request.method === "PUT" && url.pathname === "/api/mail/config") {
+      const body = await readRequestBody(request);
+      try {
+        const config = await saveMailboxConfig(body);
+        const clearImportedMails = body?.clear_imported_mails === true;
+        if (clearImportedMails) {
+          await clearImportedMailCache();
+        }
+        sendJson(response, 200, { ok: true, config, clear_imported_mails: clearImportedMails });
+      } catch (error) {
+        sendJson(response, 400, { error: sanitizeError(error) });
+      }
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/mail-workflows") {
+      const records = await mailWorkflowRepository.listWorkflows();
+      sendJson(response, 200, { records });
+      return;
+    }
+
+    const manualReviewMatch = url.pathname.match(/^\/api\/mail\/(.+)\/manual-review$/);
+    if (request.method === "PATCH" && manualReviewMatch) {
+      const emailId = decodeURIComponent(manualReviewMatch[1] || "");
+      const stored = await readStoredMails();
+      if (!findStoredMail(stored, emailId)) {
+        sendJson(response, 404, { error: "邮件不存在" });
+        return;
+      }
+      const body = await readRequestBody(request);
+      try {
+        const result = await updateManualReviewFromUser(emailId, body);
+        sendJson(response, 200, result);
+      } catch (error) {
+        sendJson(response, 409, { error: sanitizeError(error) });
+      }
+      return;
+    }
+
+    const workflowMatch = url.pathname.match(/^\/api\/mail\/(.+)\/workflow$/);
+    if (request.method === "PUT" && workflowMatch) {
+      const emailId = decodeURIComponent(workflowMatch[1] || "");
+      const stored = await readStoredMails();
+      if (!findStoredMail(stored, emailId)) {
+        sendJson(response, 404, { error: "邮件不存在" });
+        return;
+      }
+      const body = await readRequestBody(request);
+      try {
+        const record = await updateWorkflowFromUser(emailId, String(body?.status || "").trim());
+        sendJson(response, 200, { record });
+      } catch (error) {
+        sendJson(response, 409, { error: sanitizeError(error) });
+      }
       return;
     }
 

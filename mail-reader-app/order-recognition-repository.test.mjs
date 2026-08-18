@@ -45,6 +45,16 @@ try {
   const loadedByEmailId = await repository.getOrderRecognitionByEmailId("mail_001");
   assert.equal(loadedByEmailId.id, saved.id);
   assert.equal(loadedByEmailId.items[0].model_normalized, "GN5334.4-80-M10");
+
+  const manuallyCorrected = await repository.updateOrderRecognitionItem(saved.id, {
+    recognitionItemId: loadedByEmailId.items[0].recognition_item_id,
+    productModel: "GN 675-60-M8",
+    quantity: 10,
+    unit: "个"
+  });
+  assert.equal(manuallyCorrected.items[0].model_normalized, "GN675-60-M8");
+  assert.equal(manuallyCorrected.items[0].quantity, 10);
+  assert.equal(manuallyCorrected.items[0].unit, "个");
   assert.equal(await repository.getOrderRecognitionByEmailId("missing_mail"), null);
 
   const duplicateLines = await repository.saveOrderDraft({
