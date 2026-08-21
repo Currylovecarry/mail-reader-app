@@ -1,2 +1,6 @@
 .env
+.vercel/
+public/
 data/order-recognition.db*
+.vercel
+.env*

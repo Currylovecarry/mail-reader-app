@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "node scripts/prepare-vercel.mjs",
+  "rewrites": [
+    {
+      "source": "/api/:route*",
+      "destination": "/api/[...route]?route=$1"
+    }
+  ],
+  "functions": {
+    "api/[...route].mjs": {
+      "maxDuration": 300,
+      "includeFiles": "node_modules/@tesseract.js-data/**"
+    }
+  }
+}

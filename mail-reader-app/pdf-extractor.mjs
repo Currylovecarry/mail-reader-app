@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PDFParse } from "pdf-parse";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +12,16 @@ const MAX_TEXT_LENGTH = 20000;
 
 const pdfExtensions = new Set([".pdf"]);
 const pdfMimeTypes = new Set(["application/pdf"]);
+
+// pdf-parse initializes optional canvas code when imported.  Serverless
+// endpoints that do not parse PDFs (login, configuration and mail sync) must
+// not depend on that optional runtime being available.
+const pdfParserPackage = "pdf-parse";
+
+async function loadPdfParser() {
+  const { PDFParse } = await import(pdfParserPackage);
+  return PDFParse;
+}
 
 export function isPdfAttachment(attachment) {
   const extension = path.extname(attachment?.name || "").toLowerCase();
@@ -40,6 +49,7 @@ export async function extractPdfBlocks(attachment) {
     }
 
     const buffer = await fs.readFile(filePath);
+    const PDFParse = await loadPdfParser();
     const parser = new PDFParse({ data: buffer });
 
     try {

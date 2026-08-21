@@ -692,7 +692,7 @@ class LineSocket {
   }
 }
 
-class ImapClient {
+export class ImapClient {
   constructor(config) {
     this.config = config;
     this.tagCounter = 1;
@@ -771,6 +771,13 @@ class ImapClient {
     }
   }
 
+  async identify() {
+    const command = buildImapIdentificationCommand(this.config.host);
+    if (command) {
+      await this.command(command);
+    }
+  }
+
   async selectMailbox() {
     await this.command(`SELECT ${imapQuote(this.config.mailbox || "INBOX")}`);
   }
@@ -815,6 +822,22 @@ class ImapClient {
 
 function imapQuote(value) {
   return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`;
+}
+
+export function buildImapIdentificationCommand(host) {
+  const normalizedHost = String(host || "").trim().toLowerCase();
+  const isNeteaseImapHost = ["imap.163.com", "imap.126.com", "imap.yeah.net"].includes(normalizedHost);
+  if (!isNeteaseImapHost) {
+    return "";
+  }
+
+  const attributes = [
+    ["name", "OrderBridge"],
+    ["version", "1.0.0"],
+    ["vendor", "OrderBridge"],
+    ["support-email", "support@orderbridge.local"]
+  ];
+  return `ID (${attributes.flatMap(([key, value]) => [imapQuote(key), imapQuote(value)]).join(" ")})`;
 }
 
 function formatImapDate(date) {
@@ -1005,7 +1028,7 @@ function safeFileName(fileName) {
     .slice(0, 180);
 }
 
-async function saveImapAttachment(mailId, index, attachment) {
+export async function saveImapAttachment(mailId, index, attachment) {
   if (!attachment.content?.length) {
     return null;
   }
@@ -1024,7 +1047,7 @@ async function saveImapAttachment(mailId, index, attachment) {
   };
 }
 
-async function normalizeImapMessage(item, accountEmail) {
+export async function normalizeImapMessage(item, accountEmail, { saveAttachment = saveImapAttachment } = {}) {
   const { headersText } = splitHeadersAndBody(item.raw);
   const headers = parseHeaders(headersText);
   const parsed = parseMimeEntity(item.raw);
@@ -1039,12 +1062,13 @@ async function normalizeImapMessage(item, accountEmail) {
       : htmlTextLines;
   const attachments = [];
   for (const [index, attachment] of parsed.attachments.entries()) {
-    const saved = await saveImapAttachment(id, index, attachment);
+    const saved = await saveAttachment(id, index, attachment);
     attachments.push({
       name: saved?.fileName || attachment.name || "附件",
       type: attachment.type || "附件",
       size: Number(attachment.size) || 0,
       previewPath: saved?.webPath || "",
+      storagePath: saved?.storagePath || "",
       previewMode: detectPreviewMode(saved?.fileName || attachment.name, attachment.type),
       previewLabel: saved ? "点击打开已下载附件" : "IMAP 已读取附件元数据，暂未下载附件内容",
       summary: summarizeAttachment(attachment),
@@ -1079,7 +1103,7 @@ async function normalizeImapMessage(item, accountEmail) {
   };
 }
 
-function getDedupKey(mail) {
+export function getDedupKey(mail) {
   if (mail.messageId) {
     return `message:${normalizeDedupPart(mail.messageId)}`;
   }
@@ -1104,12 +1128,12 @@ function normalizeDedupPart(value) {
     .toLowerCase();
 }
 
-function getMailTime(mail) {
+export function getMailTime(mail) {
   const timestamp = new Date(mail.time || "").getTime();
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function isMailWithinDays(mail, days) {
+export function isMailWithinDays(mail, days) {
   const timestamp = getMailTime(mail);
   if (!timestamp) {
     return false;
@@ -1154,6 +1178,7 @@ async function syncImapInbox(config, options = {}) {
   try {
     await client.connect();
     await client.login();
+    await client.identify();
     await client.selectMailbox();
     const sinceDate = new Date(Date.now() - syncDays * 24 * 60 * 60 * 1000);
     const uids = await client.searchUids(sinceDate);
@@ -1271,8 +1296,7 @@ function encodeMailSubject(subject) {
     : subject;
 }
 
-export async function sendSmtpMail(message) {
-  const config = getMailConfig();
+export async function sendSmtpMail(message, { config = getMailConfig() } = {}) {
   assertSmtpConfig(config);
 
   const recipients = Array.isArray(message.to) ? message.to : String(message.to || "").split(",");

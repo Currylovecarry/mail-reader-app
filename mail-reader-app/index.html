@@ -2327,6 +2327,12 @@
         margin-top: 16px;
       }
 
+      .connection-dialog-actions .secondary-button,
+      .connection-dialog-actions .primary-button {
+        width: auto;
+        padding: 0 14px;
+      }
+
       .mail-account-switch {
         margin-top: 20px;
         padding-top: 20px;
@@ -3060,8 +3066,8 @@
           <button class="connection-card" id="guide-button" type="button" aria-label="查看邮箱连接状态">
             <span class="connection-dot" aria-hidden="true"></span>
             <span class="connection-copy">
-              <strong>邮箱已连接</strong>
-              <small id="connection-email">正在读取账户</small>
+              <strong id="connection-title">正在准备邮箱连接</strong>
+              <small id="connection-email">请稍候</small>
             </span>
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m9 18 6-6-6-6"></path>
@@ -3268,19 +3274,19 @@
         </button>
       </div>
       <div class="dialog-body">
-        <p class="dialog-copy">账号信息仅保存在本机。同步或发送邮件时，系统才会连接对应的邮箱服务器。</p>
+        <p class="dialog-copy">填写并保存后即可同步邮件。邮箱授权码与 DeepSeek API Key 仅以加密形式保存，页面不会再次显示它们。</p>
         <div class="connection-details" id="mail-config-summary">
           <div class="connection-row"><span>连接状态</span><strong>正在读取</strong></div>
         </div>
         <div class="dialog-actions connection-dialog-actions">
-          <button class="secondary-button" id="mailbox-switch-button" type="button">切换邮箱</button>
+          <button class="secondary-button" id="mailbox-switch-button" type="button" hidden>重新填写配置</button>
         </div>
         <section class="mail-account-switch" id="mail-account-switch" hidden aria-labelledby="mail-account-switch-title">
           <div class="mail-account-switch-header">
-            <h3 id="mail-account-switch-title">连接另一个邮箱</h3>
-            <p>请填写新邮箱的 IMAP、SMTP 服务器和授权码。授权码不会在页面中显示或返回。</p>
+            <h3 id="mail-account-switch-title">连接邮箱</h3>
+            <p>请填写邮箱的 IMAP、SMTP 服务器和授权码。授权码不会在页面中显示或返回。</p>
           </div>
-          <form class="mail-account-form" id="mail-account-form">
+          <form class="mail-account-form" id="mail-account-form" novalidate>
             <div class="form-field">
               <label for="mailbox-email">邮箱地址</label>
               <input id="mailbox-email" name="email" type="email" required autocomplete="username" placeholder="name@example.com" />
@@ -3319,15 +3325,31 @@
             </label>
             <div class="form-field">
               <label for="mail-auth-code">邮箱授权码</label>
-              <input id="mail-auth-code" name="authCode" type="password" required autocomplete="new-password" placeholder="填写授权码或应用专用密码" />
+              <input id="mail-auth-code" name="authCode" type="password" required autocomplete="new-password" placeholder="请输入邮箱授权码" />
+            </div>
+            <div class="mail-account-switch-header">
+              <h3>DeepSeek 识别配置</h3>
+              <p>用于识别复杂正文、图片和 PDF 中的订单信息。API Key 只在服务端加密保存。</p>
+            </div>
+            <div class="form-field">
+              <label for="llm-base-url">DeepSeek API 地址</label>
+              <input id="llm-base-url" name="llmBaseUrl" type="text" inputmode="url" autocomplete="url" value="https://api.deepseek.com" placeholder="https://api.deepseek.com" />
+            </div>
+            <div class="form-field">
+              <label for="llm-model">DeepSeek 模型</label>
+              <input id="llm-model" name="llmModel" type="text" autocomplete="off" value="deepseek-v4-flash" placeholder="deepseek-v4-flash" />
+            </div>
+            <div class="form-field">
+              <label for="llm-api-key">DeepSeek API Key</label>
+              <input id="llm-api-key" name="llmApiKey" type="password" required autocomplete="new-password" placeholder="请输入 DeepSeek API Key" />
             </div>
             <label class="mail-security-option">
               <input id="clear-imported-mails" name="clearImportedMails" type="checkbox" />
               <span>清空本地邮件列表缓存（推荐）<small>不会删除真实邮箱中的邮件，也不会删除本地的订单识别历史。</small></span>
             </label>
             <div class="dialog-actions">
-              <button class="secondary-button" id="mailbox-switch-cancel-button" type="button">取消</button>
-              <button class="primary-button" id="mailbox-save-button" type="submit">保存并切换</button>
+              <button class="secondary-button" id="mailbox-switch-cancel-button" type="button">暂不填写</button>
+              <button class="primary-button" id="mailbox-save-button" type="submit">保存并连接</button>
             </div>
           </form>
         </section>
@@ -3441,6 +3463,7 @@
         guideButton: document.getElementById("guide-button"),
         guideDialog: document.getElementById("guide-dialog"),
         guideCloseButton: document.getElementById("guide-close-button"),
+        connectionTitle: document.getElementById("connection-title"),
         connectionEmail: document.getElementById("connection-email"),
         mailConfigSummary: document.getElementById("mail-config-summary"),
         mailboxSwitchButton: document.getElementById("mailbox-switch-button"),
@@ -3455,6 +3478,9 @@
         smtpPort: document.getElementById("smtp-port"),
         smtpSecure: document.getElementById("smtp-secure"),
         mailAuthCode: document.getElementById("mail-auth-code"),
+        llmBaseUrl: document.getElementById("llm-base-url"),
+        llmModel: document.getElementById("llm-model"),
+        llmApiKey: document.getElementById("llm-api-key"),
         clearImportedMails: document.getElementById("clear-imported-mails"),
         mailboxSwitchCancelButton: document.getElementById("mailbox-switch-cancel-button"),
         mailboxSaveButton: document.getElementById("mailbox-save-button"),
@@ -3471,6 +3497,116 @@
         toastIcon: document.getElementById("toast-icon"),
         toastText: document.getElementById("toast-text")
       };
+
+      const rawFetch = window.fetch.bind(window);
+      const workspaceTokenStorageKey = "orderbridge.cloud-workspace.v2";
+      let cloudAuthEnabled = false;
+      let cloudAccessToken = "";
+      let inMemoryWorkspaceToken = "";
+
+      function setAccountUi({ signedIn = false, localMode = false, unavailable = false } = {}) {
+        elements.mailboxSwitchButton.hidden = !(signedIn || localMode);
+
+        if (localMode) {
+          elements.connectionTitle.textContent = "本地邮箱";
+          elements.connectionEmail.textContent = "本地模式，不需要登录";
+        } else if (unavailable) {
+          elements.connectionTitle.textContent = "云端服务暂不可用";
+          elements.connectionEmail.textContent = "请刷新页面后重试";
+        } else if (!signedIn) {
+          elements.connectionTitle.textContent = "正在准备邮箱连接";
+          elements.connectionEmail.textContent = "请稍候";
+        } else {
+          elements.connectionTitle.textContent = "云端邮箱";
+        }
+      }
+
+      function normalizeWorkspaceToken(value) {
+        const token = String(value || "").trim();
+        return /^obw\.[0-9a-f-]{36}\.[A-Za-z0-9_-]+$/i.test(token) ? token : "";
+      }
+
+      function getStoredWorkspaceToken() {
+        if (inMemoryWorkspaceToken) return inMemoryWorkspaceToken;
+        try {
+          const token = normalizeWorkspaceToken(window.localStorage.getItem(workspaceTokenStorageKey));
+          if (token) inMemoryWorkspaceToken = token;
+        } catch {
+          // Private browsing may not permit local storage. The current tab can still work.
+        }
+        return inMemoryWorkspaceToken;
+      }
+
+      function storeWorkspaceToken(token) {
+        inMemoryWorkspaceToken = token;
+        try {
+          window.localStorage.setItem(workspaceTokenStorageKey, token);
+        } catch {
+          // The tab continues to work even when the browser blocks local storage.
+        }
+      }
+
+      function clearStoredWorkspaceToken() {
+        inMemoryWorkspaceToken = "";
+        cloudAccessToken = "";
+        try {
+          window.localStorage.removeItem(workspaceTokenStorageKey);
+        } catch {
+          // Nothing to clear when browser storage is unavailable.
+        }
+      }
+
+      async function ensureCloudWorkspace() {
+        const savedToken = getStoredWorkspaceToken();
+        if (savedToken) {
+          cloudAccessToken = savedToken;
+          return savedToken;
+        }
+
+        const response = await rawFetch("/api/guest-session", { method: "POST" });
+        const payload = await response.json().catch(() => ({}));
+        const token = normalizeWorkspaceToken(payload.workspace_token);
+        if (!response.ok || !token) {
+          throw new Error(payload.error || "无法初始化云端工作区");
+        }
+        storeWorkspaceToken(token);
+        cloudAccessToken = token;
+        return token;
+      }
+
+      function installAuthorizedFetch() {
+        window.fetch = async (resource, init = {}) => {
+          const target = typeof resource === "string" ? resource : resource?.url || "";
+          if (!cloudAuthEnabled || !/^\/api\//.test(target)
+            || target === "/api/public-config" || target === "/api/guest-session") {
+            return rawFetch(resource, init);
+          }
+          if (!cloudAccessToken) {
+            throw new Error("云端工作区尚未准备完成，请刷新页面后重试");
+          }
+          const headers = { ...(init.headers || {}), Authorization: `Bearer ${cloudAccessToken}` };
+          return rawFetch(resource, { ...init, headers });
+        };
+      }
+
+      async function initializeCloudAuth() {
+        if (window.location.protocol === "file:") {
+          setAccountUi({ localMode: true });
+          return true;
+        }
+        try {
+          cloudAuthEnabled = true;
+          installAuthorizedFetch();
+          const token = await ensureCloudWorkspace();
+          if (!token) throw new Error("无法初始化云端工作区");
+          setAccountUi({ signedIn: true });
+          return true;
+        } catch (error) {
+          setAccountUi({ unavailable: true });
+          showToast(error?.message || "云端工作区初始化失败，请刷新后重试", "error");
+          return false;
+        }
+      }
 
       const folderTitles = {
         inbox: "收件箱",
@@ -5351,7 +5487,13 @@
       function renderMailConfig(config) {
         if (!config) {
           currentMailConfig = null;
-          elements.connectionEmail.textContent = "连接状态待确认";
+          if (cloudAuthEnabled) {
+            elements.connectionTitle.textContent = "云端邮箱未配置";
+            elements.connectionEmail.textContent = "请点击卡片后填写邮箱信息";
+          } else {
+            elements.connectionTitle.textContent = "本地邮箱";
+            elements.connectionEmail.textContent = "连接状态待确认";
+          }
           elements.mailConfigSummary.innerHTML = `
             <div class="connection-row"><span>连接状态</span><strong>暂时无法读取</strong></div>`;
           return;
@@ -5360,11 +5502,14 @@
         const email = config.email || config.agent?.alias || "当前邮箱";
         const receiveReady = config.mode === "imap_smtp" ? Boolean(config.imap?.configured) : true;
         const sendReady = config.mode === "imap_smtp" ? Boolean(config.smtp?.configured) : true;
+        const llmReady = Boolean(config.llm?.configured);
+        elements.connectionTitle.textContent = cloudAuthEnabled ? "云端邮箱" : "本地邮箱";
         elements.connectionEmail.textContent = email;
         elements.mailConfigSummary.innerHTML = `
           <div class="connection-row"><span>邮箱账户</span><strong>${escapeHtml(email)}</strong></div>
           <div class="connection-row"><span>接收邮件</span><strong>${receiveReady ? "已就绪" : "需要检查连接"}</strong></div>
-          <div class="connection-row"><span>发送邮件</span><strong>${sendReady ? "已就绪" : "需要检查连接"}</strong></div>`;
+          <div class="connection-row"><span>发送邮件</span><strong>${sendReady ? "已就绪" : "需要检查连接"}</strong></div>
+          <div class="connection-row"><span>DeepSeek 识别</span><strong>${llmReady ? "已就绪" : "需要填写 API Key"}</strong></div>`;
       }
 
       function fillMailboxConfigForm(config = currentMailConfig) {
@@ -5379,6 +5524,9 @@
         elements.smtpPort.value = smtp.port || 465;
         elements.smtpSecure.checked = smtp.secure !== false;
         elements.mailAuthCode.value = "";
+        elements.llmBaseUrl.value = config?.llm?.base_url || "https://api.deepseek.com";
+        elements.llmModel.value = config?.llm?.model || "deepseek-v4-flash";
+        elements.llmApiKey.value = "";
         elements.clearImportedMails.checked = false;
       }
 
@@ -5395,8 +5543,26 @@
         elements.mailboxSwitchButton.hidden = false;
       }
 
+      function validateMailboxConfigForm() {
+        const deepSeekUrl = elements.llmBaseUrl.value.trim();
+        if (!/^https:\/\/[^\s/]+/i.test(deepSeekUrl)) {
+          showToast("DeepSeek API 地址必须以 https:// 开头", "error");
+          elements.llmBaseUrl.focus();
+          return false;
+        }
+        const invalidField = [...elements.mailboxConfigForm.querySelectorAll("input, textarea, select")]
+          .find((field) => !field.checkValidity());
+        if (!invalidField) return true;
+        const label = elements.mailboxConfigForm.querySelector(`label[for="${invalidField.id}"]`);
+        const fieldName = label?.textContent?.trim() || "该字段";
+        showToast(`${fieldName}不能为空或格式不正确`, "error");
+        invalidField.focus();
+        return false;
+      }
+
       async function saveMailboxConfig(event) {
         event.preventDefault();
+        if (!validateMailboxConfigForm()) return;
         const clearImportedMails = elements.clearImportedMails.checked;
         const payload = {
           email: elements.mailboxEmail.value.trim(),
@@ -5408,6 +5574,9 @@
           smtpPort: elements.smtpPort.value,
           smtpSecure: elements.smtpSecure.checked,
           authCode: elements.mailAuthCode.value,
+          llmBaseUrl: elements.llmBaseUrl.value.trim(),
+          llmModel: elements.llmModel.value.trim(),
+          llmApiKey: elements.llmApiKey.value,
           clear_imported_mails: clearImportedMails
         };
         elements.mailboxSaveButton.disabled = true;
@@ -5561,6 +5730,17 @@
         }
       });
       elements.guideButton.addEventListener("click", async () => {
+        if (cloudAuthEnabled) {
+          if (!cloudAccessToken) {
+            try {
+              await ensureCloudWorkspace();
+              setAccountUi({ signedIn: true });
+            } catch (error) {
+              showToast(error?.message || "云端工作区初始化失败，请刷新后重试", "error");
+              return;
+            }
+          }
+        }
         await loadMailConfig();
         showDialog(elements.guideDialog);
       });
@@ -5595,8 +5775,20 @@
 
       renderList();
       renderReader(null);
-      loadMailConfig();
-      loadPersistedMails();
+      initializeCloudAuth()
+        .then(async (ready) => {
+          if (!ready) return;
+          await loadMailConfig();
+          if (currentMailConfig?.imap?.configured) {
+            await loadPersistedMails();
+          }
+          openMailboxSwitch();
+          showDialog(elements.guideDialog);
+        })
+        .catch(() => {
+          setAccountUi({ unavailable: true });
+          showToast("云端初始化失败，请刷新后重试", "error");
+        });
     </script>
   </body>
 </html>

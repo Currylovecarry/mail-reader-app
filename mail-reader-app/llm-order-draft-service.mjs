@@ -101,7 +101,7 @@ export async function generateOrderDraft(extractedContent, options = {}) {
       email_id: extractedContent?.email_id || "",
       plain_summary: buildPlainSummary(normalized),
       provider: "openai_compatible",
-      model: getLlmConfig().model,
+      model: getLlmConfig(options).model,
       extracted_block_count: Array.isArray(extractedContent?.content_blocks) ? extractedContent.content_blocks.length : 0,
       order_draft: normalized,
       raw_llm_response: rawLlmResponse,
@@ -127,8 +127,8 @@ export async function generateOrderDraft(extractedContent, options = {}) {
   }
 }
 
-async function invokeOpenAiCompatibleLlm(prompt) {
-  const config = getLlmConfig();
+async function invokeOpenAiCompatibleLlm(prompt, options = {}) {
+  const config = getLlmConfig(options);
   if (!config.apiKey) {
     throw new Error("缺少 LLM_API_KEY，无法生成订单草稿");
   }
@@ -169,18 +169,19 @@ async function invokeOpenAiCompatibleLlm(prompt) {
   throw new Error("LLM 未返回可解析内容");
 }
 
-function getLlmConfig() {
-  const baseUrl = String(process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+function getLlmConfig(options = {}) {
+  const runtimeConfig = options.llmConfig || {};
+  const baseUrl = String(runtimeConfig.baseUrl || process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
   const isDeepSeek = /api\.deepseek\.com(?:\/v1)?$/i.test(baseUrl);
   return {
     baseUrl,
-    model: process.env.LLM_MODEL || "gpt-4o-mini",
-    apiKey: process.env.LLM_API_KEY || "",
-    timeoutMs: clampTimeout(process.env.LLM_TIMEOUT_MS, 120_000),
+    model: runtimeConfig.model || process.env.LLM_MODEL || "gpt-4o-mini",
+    apiKey: runtimeConfig.apiKey || process.env.LLM_API_KEY || "",
+    timeoutMs: clampTimeout(runtimeConfig.timeoutMs ?? process.env.LLM_TIMEOUT_MS, 120_000),
     useJsonMode: isDeepSeek,
     isDeepSeek,
     thinkingEnabled: ["1", "true", "yes", "on", "enabled"].includes(
-      String(process.env.LLM_THINKING_ENABLED || "").trim().toLowerCase()
+      String(runtimeConfig.thinkingEnabled ?? process.env.LLM_THINKING_ENABLED ?? "").trim().toLowerCase()
     )
   };
 }

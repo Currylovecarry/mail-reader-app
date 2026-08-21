@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { countRetainedAddedMails, normalizeMailboxConfig } from "./mail-service.mjs";
+import {
+  buildImapIdentificationCommand,
+  countRetainedAddedMails,
+  normalizeMailboxConfig
+} from "./mail-service.mjs";
 
 function mail(id, time) {
   return {
@@ -74,5 +78,11 @@ assert.throws(
   }),
   /IMAP 端口/
 );
+
+assert.equal(
+  buildImapIdentificationCommand("imap.163.com"),
+  'ID ("name" "OrderBridge" "version" "1.0.0" "vendor" "OrderBridge" "support-email" "support@orderbridge.local")'
+);
+assert.equal(buildImapIdentificationCommand("imap.gmail.com"), "");
 
 console.log("mail-service config test passed");

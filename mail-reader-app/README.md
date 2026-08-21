@@ -34,6 +34,45 @@ node mail-reader-app/server.mjs
 
 Open `http://127.0.0.1:3080` and click the import button to sync mail.
 
+## Deploy to Vercel with Supabase
+
+The Vercel deployment is multi-user. Each user signs in, then provides their
+own IMAP/SMTP connection and DeepSeek API Key in the app. Mailbox authorization
+codes and DeepSeek keys are encrypted using AES-256-GCM before storage; they
+are never returned to the browser after saving and must not be placed in Vercel
+environment variables.
+
+1. Create a Supabase project, then run
+   [`supabase/migrations/202608210001_orderbridge.sql`](supabase/migrations/202608210001_orderbridge.sql)
+   in the Supabase SQL editor.
+2. Enable Email authentication in Supabase. After the first Vercel deployment,
+   add the production URL and preview URL pattern as Auth redirect URLs.
+3. Connect the Supabase project to the Vercel project through the Vercel
+   Marketplace. This supplies `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and
+   `SUPABASE_SECRET_KEY` to Vercel.
+4. In Vercel project settings, add `CREDENTIAL_ENCRYPTION_KEY` as a secret for
+   Production, Preview, and Development. Generate it locally with:
+
+   ```bash
+   openssl rand -hex 32
+   ```
+
+   Keep this exact value safe: replacing it makes existing encrypted mailbox
+   and DeepSeek credentials unreadable, so users would need to enter them
+   again.
+5. From this directory, run:
+
+   ```bash
+   vercel login
+   vercel --prod
+   ```
+
+The build intentionally excludes the local `mail-data.js` snapshot so a
+developer's imported mail is never published. Upload the approved product
+master into Supabase `product_catalog` before enabling production order
+confirmation; the historical `test_product_catalog` is not a production
+catalog.
+
 You can also generate the static `mail-data.js` snapshot:
 
 ```bash

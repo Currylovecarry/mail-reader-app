@@ -234,7 +234,7 @@ export function createOrderRecognitionRepository({ databasePath = defaultDatabas
   };
 }
 
-function normalizeOrderDraft(orderDraft) {
+export function normalizeOrderDraft(orderDraft) {
   const requirements = orderDraft?.requirements || {};
   const items = Array.isArray(orderDraft?.products) ? orderDraft.products : [];
   const normalizedItems = items.map((item, index) => ({
